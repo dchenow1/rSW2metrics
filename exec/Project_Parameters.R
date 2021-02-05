@@ -26,7 +26,7 @@ if (do_full) {
 }
 
 dir_sw2_output <- file.path(dir_rSFSW2, "3_Runs")
-
+has_rSOILWAT2_inputs <– TRUE
 
 N_exp <- 1
 N_scen <- 7

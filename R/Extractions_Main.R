@@ -189,7 +189,7 @@ check_extraction_arguments <- function(x) {
 
 required_project_parameters <- function() {
   c(
-    "dir_sw2_output", "dir_out",
+    "dir_sw2_output", "dir_out", "has_rSOILWAT2_inputs",
     "N_exp", "N_scen", "id_scen_used",
     "years_timeseries_by_scen", "years_aggs_by_scen",
     "season_by_month", "first_month_of_year",
@@ -199,6 +199,19 @@ required_project_parameters <- function() {
 }
 
 check_project_parameters <- function(x, args) {
+  #--- Add missing parameter (and warn)
+  # e.g., if this is run with an earlier version of "Project_Parameters.R"
+  if (!exists("has_rSOILWAT2_inputs", where = x)) {
+    warning(
+      "Project parameter 'has_rSOILWAT2_inputs' is missing; ",
+      "using default value 'TRUE'."
+    )
+
+    x[["has_rSOILWAT2_inputs"]] <- TRUE
+  }
+
+
+  #---
   hasnot_params <- !sapply(
     required_project_parameters(),
     exists,
@@ -470,7 +483,8 @@ extract_metrics <- function(args) {
 
     has_sw2_output <- check_all_output_available_of_run(
       path_to_run = file.path(fun_args[["path"]], run_rSFSW2_names[s]), # nolint
-      N_scen = prjpars[["N_scen"]]
+      N_scen = prjpars[["N_scen"]],
+      check_input = prjpars[["has_rSOILWAT2_inputs"]]
     )
 
     if (has_sw2_output) {

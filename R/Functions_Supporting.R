@@ -1,18 +1,18 @@
 
-do_seug <- FALSE
-do_newRR <- TRUE
-do_blitzen <- TRUE
-
-
 #--- Helper functions ----------------------------------------------------------
-check_all_output_available_of_run <- function(path_to_run, N_scen) {
+check_all_output_available_of_run <- function(
+  path_to_run, N_scen, check_input = TRUE
+) {
   files <- list.files(file.path(path_to_run), full.names = TRUE)
 
   fnum <- length(files)
   fsizes <- sapply(files, function(f) file.size(f), USE.NAMES = FALSE)
 
   # Expect: One output file per scenario plus one file for inputs
-  isTRUE(fnum == N_scen + 1 && all(fsizes > 0))
+  isTRUE(
+    fnum == N_scen + if (check_input) 1 else 0 &&
+    all(fsizes > 0)
+  )
 }
 
 #--- Obtain input values -------------------------------------------------------
