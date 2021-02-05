@@ -1,0 +1,41 @@
+Package: rSW2metrics
+Title: Calculate ecohydrological metrics from SOILWAT2 simulations
+Version: 0.0.0.9000
+Authors@R: c(
+  person(
+    "Daniel", "Schlaepfer",
+    email = "danielrschlaepfer@gmail.com",
+    comment = c(ORCID = "0000-0001-9973-2065"),
+    role = c("aut", "cre")))
+Description: Collection of functions to calculate ecohydrological metrics
+    from output created by rSOILWAT2 or rSFSW2 simulation experiments.
+Depends:
+    R (>= 3.5.0),
+    methods
+Imports:
+    rSOILWAT2,
+    rSW2utils,
+    parallel,
+    foreach (>= 1.5.0),
+    doParallel (>= 1.0.7)
+Suggests:
+    modifiedmk,
+    reshape2,
+    rSW2funs,
+    zoo,
+    testthat (>= 3.0),
+    spelling,
+    lintr,
+    covr
+Remotes:
+    github::DrylandEcology/rSW2utils,
+    github::DrylandEcology/rSW2funs,
+    github::DrylandEcology/rSOILWAT2
+License: GPL-3
+URL: https://github.com/DrylandEcology/rSW2metrics
+BugReports: https://github.com/DrylandEcology/rSW2metrics/issues
+Encoding: UTF-8
+LazyData: true
+Config/testthat/edition: 3
+Language: en-US
+RoxygenNote: 7.1.1

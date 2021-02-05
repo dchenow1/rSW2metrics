@@ -1,0 +1,110 @@
+#--- Obtain input values -------------------------------------------------------
+get_soillayers_variable <- function(
+  path,
+  name_sw2_run,
+  id_scen = 1L,
+  Nmax_soillayers = 23L,
+  sw2_soil_var,
+  ...
+) {
+
+  Nmax_soillayers <- as.integer(Nmax_soillayers)
+  Nmax_soillayers <- if (is.finite(Nmax_soillayers) && Nmax_soillayers > 0) {
+    min(Nmax_soillayers, 23L)
+  } else {
+    23L
+  }
+
+  # Extract rSOILWAT2 input object: `swRunScenariosData`
+  sim_input <- new.env(parent = emptyenv())
+  load(
+    file = file.path(path, name_sw2_run, "sw_input.RData"),
+    envir = sim_input
+  )
+
+  tmp <- slot(
+    object = slot(sim_input[["swRunScenariosData"]][[id_scen]], "soils"),
+    name = "Layers"
+  )[, sw2_soil_var, drop = FALSE]
+
+  res <- matrix(
+    data = NA,
+    nrow = length(sw2_soil_var),
+    ncol = Nmax_soillayers,
+    dimnames = list(sw2_soil_var, NULL)
+  )
+
+  res[, seq_len(nrow(tmp))] <- t(tmp)
+
+  res
+}
+
+
+
+
+
+#--- Specific input value functions ------------------------------------------
+collect_input_soillayers_depth <- function(
+  path,
+  name_sw2_run,
+  id_scen = 1L,
+  Nmax_soillayers = 23L,
+  ...
+) {
+  get_soillayers_variable(
+    path,
+    name_sw2_run,
+    id_scen,
+    Nmax_soillayers,
+    sw2_soil_var = "depth_cm"
+  )
+}
+
+collect_input_soillayers_gravel <- function(
+  path,
+  name_sw2_run,
+  id_scen = 1L,
+  Nmax_soillayers = 23L,
+  ...
+) {
+  get_soillayers_variable(
+    path,
+    name_sw2_run,
+    id_scen,
+    Nmax_soillayers,
+    sw2_soil_var = "gravel_content"
+  )
+}
+
+collect_input_soillayers_sand <- function(
+  path,
+  name_sw2_run,
+  id_scen = 1L,
+  Nmax_soillayers = 23L,
+  ...
+) {
+  get_soillayers_variable(
+    path,
+    name_sw2_run,
+    id_scen,
+    Nmax_soillayers,
+    sw2_soil_var = "sand_frac"
+  )
+}
+
+
+collect_input_soillayers_clay <- function(
+  path,
+  name_sw2_run,
+  id_scen = 1L,
+  Nmax_soillayers = 23L,
+  ...
+) {
+  get_soillayers_variable(
+    path,
+    name_sw2_run,
+    id_scen,
+    Nmax_soillayers,
+    sw2_soil_var = "clay_frac"
+  )
+}
