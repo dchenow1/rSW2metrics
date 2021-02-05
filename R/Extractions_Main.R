@@ -15,7 +15,8 @@ ref_extraction_arguments <- function() {
       "do_full", "ntests",
       "ncores", "cl_log",
       "add_aggs_across_yrs"
-    )
+    ),
+    stringsAsFactors = FALSE
   )
 }
 
