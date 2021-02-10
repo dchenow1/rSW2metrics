@@ -17,18 +17,96 @@ check_all_output_available_of_run <- function(
 
 #--- Obtain input values -------------------------------------------------------
 
-calc_soillayer_weights <- function(soil_depths_cm, used_depth_range_cm) {
-  used_soil_widths_cm <- diff(c(0, soil_depths_cm))
-  if (!missing(used_depth_range_cm) || is.null(used_depth_range_cm)) {
-    ids <-
-      soil_depths_cm <= used_depth_range_cm[1] |
-      soil_depths_cm > used_depth_range_cm[2]
-    used_soil_widths_cm[ids] <- NA
-  }
+#' Determine widths (as weights) of soil layers within a zone
+#'
+#' @param soil_depths_cm A numeric vector.
+#'   The lower depth limits of soil layers in \var{[cm]}.
+#' @param used_depth_range_cm A numeric vector of length two.
+#'   The upper and lower depth limit of the zone (depth range) to consider.
+#'
+#' @return A numeric vector of the same length as \code{soil_depths_cm}.
+#'   The values correspond to soil layer widths that fall within the
+#'   selected zone. Other values, outside the zone, are set to \code{NA}.
+#'
+#' @examples
+#' calc_soillayer_weights(c(5, 10, 30, 50), NULL)
+#' calc_soillayer_weights(c(5, 10, 30, 50), c(0, 100))
+#' calc_soillayer_weights(c(5, 10, 30, 50), c(0, 40))
+#' calc_soillayer_weights(c(5, 10, 30, 50), c(0, 40))
+#' calc_soillayer_weights(c(5, 10, 30, 50), c(20, 50))
+#'
+#' @export
+calc_soillayer_weights <- function(soil_depths_cm, used_depth_range_cm = NULL) {
+  ids <-
+    soil_depths_cm <= used_depth_range_cm[1] |
+    soil_depths_cm > used_depth_range_cm[2]
 
-  used_soil_widths_cm
+  x <- diff(c(0, soil_depths_cm))
+  x[ids] <- NA
+
+  x
 }
 
+
+#' Check whether soil layers are available in a specified zone
+#'
+#' @inheritParams calc_soillayer_weights
+#' @param strict A logical vector either of length one or equal to the
+#'  length of \code{used_depth_range_cm}. \code{TRUE} indicates that
+#'  the corresponding value (or all) of \code{used_depth_range_cm} is required
+#'  to be either zero or one of the values of \code{soil_depths_cm}.
+#' @param type A character string. If a value is not present, then either
+#'  a warning is issued or an error.
+#'
+#' @return (Invisibly) a logical value indicating whether at least one
+#'  required value is missing (\code{FALSE}) or all are present (\code{TRUE}).
+#'
+#' @examples
+#' check_soillayer_availability(
+#'   c(5, 10, 30, 50), c(0, 40),
+#'   strict = TRUE,
+#'   type = "warn"
+#' )
+#' check_soillayer_availability(
+#'   c(5, 10, 30, 50), c(0, 40),
+#'   strict = c(TRUE, FALSE),
+#'   type = "warn"
+#' )
+#' check_soillayer_availability(
+#'   c(5, 10, 30, 50), c(20, 30, 40),
+#'   strict = TRUE,
+#'   type = "warn"
+#' )
+#'
+#' @export
+check_soillayer_availability <- function(
+  soil_depths_cm,
+  used_depth_range_cm = NULL,
+  strict = TRUE,
+  type = c("warn", "error")
+) {
+  sim_soil_depths_cm <- unique(sort(c(0, soil_depths_cm)))
+
+  msg <- character(0)
+
+  if (any(strict) && !is.null(used_depth_range_cm)) {
+    used_depth_range_cm <- unique(sort(used_depth_range_cm))
+    strict <- rep_len(strict, length(used_depth_range_cm))
+    ids <- used_depth_range_cm[strict] %in% sim_soil_depths_cm
+    if (any(!ids)) {
+      msg <- paste(
+        "Requested soil depth(s) at",
+        paste(used_depth_range_cm[strict][!ids], collapse = ", "),
+        "are not available in the simulated set of soil layers of",
+        paste(sim_soil_depths_cm, collapse = ", ")
+      )
+
+      if (match.arg(type) == "error") stop(msg) else warning(msg)
+    }
+  }
+
+  invisible(length(msg) == 0)
+}
 
 
 
