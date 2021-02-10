@@ -21,6 +21,7 @@ Imports:
 Suggests:
     modifiedmk,
     reshape2,
+    rSW2data,
     rSW2funs,
     zoo,
     testthat (>= 3.0),
@@ -29,6 +30,7 @@ Suggests:
     covr
 Remotes:
     github::DrylandEcology/rSW2utils,
+    github::DrylandEcology/rSW2data,
     github::DrylandEcology/rSW2funs,
     github::DrylandEcology/rSOILWAT2
 License: GPL-3

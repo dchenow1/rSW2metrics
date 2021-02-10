@@ -52,6 +52,7 @@ get_vpd <- function(
   path, name_sw2_run,
   id_scen, years, group_by_month, first_month_of_year, ...
 ) {
+  stopifnot(requireNamespace("rSW2data"))
 
   if (!missing(years)) {
     warning("'years' is not implemented but provided as argument!")
@@ -84,7 +85,7 @@ get_vpd <- function(
 
   cbind(
     rh[, 1:2],
-    rSFSW2:::vpd(
+    rSW2data::vpd(
       Tmin = temp_min[["vals"]][[1]],
       Tmax = temp_max[["vals"]][[1]],
       RHmean = rh[, "rh"]
