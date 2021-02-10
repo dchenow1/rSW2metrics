@@ -642,4 +642,3 @@ metric_TranspirationSeasonality_v5 <- function(
     peaksize_min_factor = 1 / 4
   )
 }
-

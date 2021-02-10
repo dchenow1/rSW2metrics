@@ -121,12 +121,21 @@ metric_SWAat0to020cm39bar_JJA <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(0, 20)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = TRUE,
+    type = "warn"
+  )
+
   get_SWA_JJA(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat0to020cm39bar_mean_JJA_mm",
     soils = soils,
-    used_depth_range_cm = c(0, 20),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -167,12 +176,21 @@ metric_SWAat20to100cm39bar_JJA <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(20, 100)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_JJA(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to100cm39bar_mean_JJA_mm",
     soils = soils,
-    used_depth_range_cm = c(20, 100),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -190,12 +208,21 @@ metric_SWAat20to040cm39bar_JJA <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(20, 40)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_JJA(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to040cm39bar_mean_JJA_mm",
     soils = soils,
-    used_depth_range_cm = c(20, 40),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -214,12 +241,21 @@ metric_SWAat40to060cm39bar_JJA <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(40, 60)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_JJA(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat40to060cm39bar_mean_JJA_mm",
     soils = soils,
-    used_depth_range_cm = c(40, 60),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -238,12 +274,21 @@ metric_SWAat60to080cm39bar_JJA <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(60, 80)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_JJA(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat60to080cm39bar_mean_JJA_mm",
     soils = soils,
-    used_depth_range_cm = c(60, 80),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -263,12 +308,21 @@ metric_SWAat80to100cm39bar_JJA <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(80, 100)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_JJA(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat80to100cm39bar_mean_JJA_mm",
     soils = soils,
-    used_depth_range_cm = c(80, 100),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -410,12 +464,21 @@ metric_SWAat0to020cm39bar_daily <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(0, 20)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = TRUE,
+    type = "warn"
+  )
+
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat0to020cm39bar_mm",
     soils = soils,
-    used_depth_range_cm = c(0, 20),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -457,12 +520,22 @@ metric_SWAat20to100cm39bar_daily <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+
+  used_depth_range_cm <- c(20, 100)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to100cm39bar_mm",
     soils = soils,
-    used_depth_range_cm = c(20, 100),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -480,12 +553,21 @@ metric_SWAat20to040cm39bar_daily <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(20, 40)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat20to040cm39bar_mm",
     soils = soils,
-    used_depth_range_cm = c(20, 40),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -504,12 +586,21 @@ metric_SWAat40to060cm39bar_daily <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(40, 60)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat40to060cm39bar_mm",
     soils = soils,
-    used_depth_range_cm = c(40, 60),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -528,12 +619,21 @@ metric_SWAat60to080cm39bar_daily <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(60, 80)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat60to080cm39bar_mm",
     soils = soils,
-    used_depth_range_cm = c(60, 80),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )
@@ -552,12 +652,21 @@ metric_SWAat80to100cm39bar_daily <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  used_depth_range_cm <- c(80, 100)
+
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   get_SWA_daily(
     path, name_sw2_run, id_scen_used,
     list_years_scen_used = list_years_scen_used,
     out_label = "SWAat80to100cm39bar_mm",
     soils = soils,
-    used_depth_range_cm = c(80, 100),
+    used_depth_range_cm = used_depth_range_cm,
     SWP_limit_MPa = -3.9,
     include_year = include_year
   )

@@ -30,6 +30,7 @@ calc_RecruitmentIndex_v2 <- function(
   # South: December solstice (Dec 20-23 = 354-357)
   doy_mid <- 196 # July 15 (in non-leap year)
 
+
   # WDD that initiates a recruitment period (germination window)
   wdd_start <- get_MDD(
     path = path,
@@ -307,6 +308,30 @@ metric_RecruitmentIndex_v4 <- function(
     req_soil_vars = "depth_cm"
   ))
 
+  init_depth_range_cm <- c(0, 5)
+  recruitment_depth_range_cm <- c(5, 20)
+  stop_depth_range_cm <- c(0, 20)
+
+  # Check soil depths
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = init_depth_range_cm,
+    strict = TRUE,
+    type = "warn"
+  )
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = recruitment_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = stop_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
@@ -317,16 +342,16 @@ metric_RecruitmentIndex_v4 <- function(
       years = list_years_scen_used[[k1]],
       soils = soils,
       hemisphere_NS = "N",
-      recruitment_depth_range_cm = c(5, 20),
+      recruitment_depth_range_cm = recruitment_depth_range_cm,
       Temp_limit_C = 5,
       Wet_SWP_limit_MPa = -1.5,
       Dry_SWP_limit_MPa = -3,
       init_WDD = 15,
       init_days = 3,
-      init_depth_range_cm = c(0, 5),
+      init_depth_range_cm = init_depth_range_cm,
       stop_DDD = 15,
       stop_days_DDD = 3,
-      stop_depth_range_cm = c(0, 20),
+      stop_depth_range_cm = stop_depth_range_cm,
       stop_TDD = 0,
       stop_days_TDD = 3
     ))

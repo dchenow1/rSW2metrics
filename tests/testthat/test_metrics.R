@@ -175,13 +175,13 @@ test_that("Check metrics", {
     res <- lapply(
       seq_len(N_sites),
       function(s) {
-        tmp <- process_values_one_site(
+        tmp <- suppressWarnings(process_values_one_site(
           fun = fun_metrics[k1],
           fun_args = fun_args,
           name_sw2_run = run_rSFSW2_names[s],
           is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
           soil_variables <- c("depth", "sand", "clay")
-        )
+        ))
         format_metric_1sim(x = tmp, id = s)
       }
     )
@@ -225,6 +225,8 @@ test_that("Check metrics", {
       #   likely because
       #   * all snapshots are stored in the same huge file and
       #   * differences are not resolve correctly
+      # - the function produces for style = "serialize" a snapshot of c. 12 MB
+      #   while saving individual "rds" consumes in total only 3.3 MB
       expect_snapshot_value(x = output, style = "serialize")
 
     } else {
