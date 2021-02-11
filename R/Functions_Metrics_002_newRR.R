@@ -107,42 +107,42 @@ metric_CWD <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    # Daily PET and ET
-    tmp_daily <- extract_from_sw2(
+    # Daily PET and ET and monthly temperature
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
-      sw2_tp = "Day",
-      sw2_outs = c("PET", "AET"),
-      sw2_vars = c("pet_cm", "evapotr_cm"),
-      varnames_are_fixed = TRUE
-    )
-
-    cwd_daily <- list(
-      time = tmp_daily[["time"]],
-      values = list(
-        cwd = 10 * (
-          tmp_daily[["values"]][["pet_cm"]] -
-          tmp_daily[["values"]][["evapotr_cm"]]
+      output_sets = list(
+        day = list(
+          sw2_tp = "Day",
+          sw2_outs = c("PET", "AET"),
+          sw2_vars = c(pet = "pet_cm", et = "evapotr_cm"),
+          varnames_are_fixed = TRUE
+        ),
+        mon = list(
+          sw2_tp = "Month",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
         )
       )
     )
 
+    cwd_daily <- list(
+      time = sim_data[["day"]][["time"]],
+      values = list(
+        cwd = 10 * (
+          sim_data[["day"]][["values"]][["pet"]] -
+          sim_data[["day"]][["values"]][["et"]]
+        )
+      )
+    )
 
     res[[k1]] <- t(get_new_yearly_aggregations(
       x_daily = cwd_daily,
       # (Monthly) mean air temperature
-      temp_monthly = extract_from_sw2(
-        path = path,
-        name_sw2_run = name_sw2_run,
-        id_scen = id_scen_used[k1],
-        years = list_years_scen_used[[k1]],
-        sw2_tp = "Month",
-        sw2_outs = "TEMP",
-        sw2_vars = "avg_C",
-        varnames_are_fixed = TRUE
-      ),
+      temp_monthly = sim_data[["mon"]],
       fun_time = sum,
       fun_extreme = max,
       output = c(
@@ -162,24 +162,11 @@ metric_CWD <- function(
 # wet based on any(SWC[i] > SWC_limit)
 # dry based on all(SWC[i] < SWC_limit)
 get_wetdry <- function(
-  path, name_sw2_run, id_scen,
-  years,
+  sim_swp_daily,
   soils,
   used_depth_range_cm = NULL,
   sm_periods = list(op = `>`, limit = -Inf)
 ) {
-
-  #--- Soil moisture (SWP)
-  sm_daily <- extract_from_sw2(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen = id_scen,
-    years = years,
-    sw2_tp = "Day",
-    sw2_outs = "SWPMATRIC",
-    sw2_vars = "Lyr",
-    varnames_are_fixed = FALSE
-  )
 
   widths_cm <- calc_soillayer_weights(
     soil_depths_cm = soils[["depth_cm"]],
@@ -191,32 +178,31 @@ get_wetdry <- function(
 
 
   # Days that meet soil moisture criterion
-  res <- sm_daily
   sm <- do.call(
     what = sm_periods[["op"]],
     args = list(
-      - 1 / 10 * sm_daily[["values"]][[1]][, id_slyrs, drop = FALSE],
+      - 1 / 10 * sim_swp_daily[["values"]][["swp"]][, id_slyrs, drop = FALSE],
       sm_periods[["limit"]]
     )
   )
 
-  res[["values"]][[1]] <- if (do.call(sm_periods[["op"]], list(1, 0))) {
-    # wet: op = `>` --> wet(profile) = any(wet[i])
-    apply(sm, 1, any)
-  } else {
-    # dry: op = `<` --> dry(profile) = all(dry[i])
-    apply(sm, 1, all)
-  }
-
-  res
+  list(
+    time = sim_swp_daily[["time"]],
+    values = if (do.call(sm_periods[["op"]], list(1, 0))) {
+      # wet: op = `>` --> wet(profile) = any(wet[i])
+      list(apply(sm, 1, any))
+    } else {
+      # dry: op = `<` --> dry(profile) = all(dry[i])
+      list(apply(sm, 1, all))
+    }
+  )
 }
 
 # v1b: Temp > limit & sm <> limit & snow == 0
 # wet based on any(SWC[i] > SWC_limit)
 # dry based on all(SWC[i] < SWC_limit)
 get_MDD <- function(
-  path, name_sw2_run, id_scen,
-  years,
+  sim_data,
   soils,
   used_depth_range_cm = NULL,
   t_periods = list(op = `>`, limit = 5),
@@ -226,32 +212,18 @@ get_MDD <- function(
 
   # Daily wet/dry conditions
   sm <- get_wetdry(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen = id_scen,
-    years = years,
+    sim_swp_daily = sim_data[["swp_daily"]],
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
     sm_periods = sm_periods
   )
 
-  #--- (Daily) mean air temperature and snow cover
-  tmp_daily <- extract_from_sw2(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen = id_scen,
-    years = years,
-    sw2_tp = "Day",
-    sw2_outs = c("TEMP", "SNOWPACK"),
-    sw2_vars = c("avg_C", "snowpackWaterEquivalent_cm"),
-    varnames_are_fixed = TRUE
-  )
 
   # Days that meet air temperature criterion
   dg <- do.call(
     what = t_periods[["op"]],
     args = list(
-      tmp_daily[["values"]][["avg_C"]],
+      sim_data[["temp_daily"]][["values"]][["tmean"]],
       t_periods[["limit"]]
     )
   )
@@ -260,7 +232,7 @@ get_MDD <- function(
   snw <- do.call(
     what = snow_periods[["op"]],
     args = list(
-      tmp_daily[["values"]][["snowpackWaterEquivalent_cm"]],
+      sim_data[["swe_daily"]][["values"]][["swe"]],
       snow_periods[["limit"]]
     )
   )
@@ -268,10 +240,12 @@ get_MDD <- function(
   # Temperature when all criteria are met
   ids <- sm[["values"]][[1]] & dg & snw
   mdd <- rep(0, length(ids))
-  mdd[ids] <- tmp_daily[["values"]][["avg_C"]][ids] - t_periods[["limit"]]
+  mdd[ids] <-
+    sim_data[["temp_daily"]][["values"]][["tmean"]][ids] -
+    t_periods[["limit"]]
 
   list(
-    time = tmp_daily[["time"]],
+    time = sim_data[["swp_daily"]][["time"]],
     values = list(mdd = mdd)
   )
 }
@@ -289,11 +263,35 @@ calc_TDD <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    tdd_daily <- get_MDD(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        swp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SWPMATRIC",
+          sw2_vars = c(swp = "Lyr"),
+          varnames_are_fixed = FALSE
+        ),
+        temp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        ),
+        swe_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SNOWPACK",
+          sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
+          varnames_are_fixed = TRUE
+        )
+      )
+    )
+
+    tdd_daily <- get_MDD(
+      sim_data = sim_data,
       soils = soils,
       used_depth_range_cm = used_depth_range_cm,
       t_periods = list(op = `>`, limit = Temp_limit_C),
@@ -350,11 +348,41 @@ calc_WDD <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    wdd_daily <- get_MDD(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        swp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SWPMATRIC",
+          sw2_vars = c(swp = "Lyr"),
+          varnames_are_fixed = FALSE
+        ),
+        temp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        ),
+        temp_monthly = list(
+          sw2_tp = "Month",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        ),
+        swe_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SNOWPACK",
+          sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
+          varnames_are_fixed = TRUE
+        )
+      )
+    )
+
+    wdd_daily <- get_MDD(
+      sim_data = sim_data,
       soils = soils,
       used_depth_range_cm = used_depth_range_cm,
       t_periods = list(op = `>`, limit = Temp_limit_C),
@@ -363,17 +391,7 @@ calc_WDD <- function(
 
     res[[k1]] <- t(get_new_yearly_aggregations(
       x_daily = wdd_daily,
-      # (Monthly) mean air temperature
-      temp_monthly = extract_from_sw2(
-        path = path,
-        name_sw2_run = name_sw2_run,
-        id_scen = id_scen_used[k1],
-        years = list_years_scen_used[[k1]],
-        sw2_tp = "Month",
-        sw2_outs = "TEMP",
-        sw2_vars = "avg_C",
-        varnames_are_fixed = TRUE
-      ),
+      temp_monthly = sim_data[["temp_monthly"]],
       fun_time = sum,
       output = c("values", "seasonality")
     ))
@@ -420,11 +438,35 @@ calc_DDD <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    ddd_daily <- get_MDD(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        swp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SWPMATRIC",
+          sw2_vars = c(swp = "Lyr"),
+          varnames_are_fixed = FALSE
+        ),
+        temp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        ),
+        swe_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SNOWPACK",
+          sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
+          varnames_are_fixed = TRUE
+        )
+      )
+    )
+
+    ddd_daily <- get_MDD(
+      sim_data = sim_data,
       soils = soils,
       used_depth_range_cm = used_depth_range_cm,
       t_periods = list(op = `>`, limit = Temp_limit_C),
@@ -496,25 +538,11 @@ metric_DDDat5C0to100cm30bar <- function(
 #--- SWA = Soil water availability [mm] (SWA above -3.0 and -3.9 MPa):
 # calculate monthly means
 calc_SWA <- function(
-  path, name_sw2_run, id_scen,
-  years,
+  sim_vwc_daily,
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf
 ) {
-
-  #--- Soil moisture
-  sm_daily <- extract_from_sw2(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen = id_scen,
-    years = years,
-    sw2_tp = "Day",
-    sw2_outs = "VWCMATRIC",
-    sw2_vars = "Lyr",
-    varnames_are_fixed = FALSE
-  )
-
   widths_cm <- calc_soillayer_weights(
     soil_depths_cm = soils[["depth_cm"]],
     used_depth_range_cm = used_depth_range_cm
@@ -537,7 +565,7 @@ calc_SWA <- function(
     }
 
     swc_matric_mm <- 10 * sweep(
-      x = sm_daily[["values"]][[1]][, id_slyrs, drop = FALSE],
+      x = sim_vwc_daily[["values"]][["vwc"]][, id_slyrs, drop = FALSE],
       MARGIN = 2,
       STATS = widths_cm,
       FUN = "*"
@@ -560,12 +588,13 @@ calc_SWA <- function(
 
   } else {
     # No soil layers in the depth range
-    swa_daily_values <- rep(NA, nrow(sm_daily[["time"]]))
+    swa_daily_values <- rep(NA, nrow(sim_vwc_daily[["time"]]))
   }
 
-  res <- sm_daily
-  res[["values"]][[1]] <- swa_daily_values
-  res
+  list(
+    time = sim_vwc_daily[["time"]],
+    values = list(swa_daily_values)
+  )
 }
 
 
@@ -581,11 +610,30 @@ get_SWA <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    swa_daily <- calc_SWA(
+    #--- Soil moisture
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        vwc_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "VWCMATRIC",
+          sw2_vars = c(vwc = "Lyr"),
+          varnames_are_fixed = FALSE
+        ),
+        mon = list(
+          sw2_tp = "Month",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        )
+      )
+    )
+
+    swa_daily <- calc_SWA(
+      sim_vwc_daily = sim_data[["vwc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
       used_depth_range_cm = used_depth_range_cm
@@ -593,17 +641,7 @@ get_SWA <- function(
 
     res[[k1]] <- t(get_new_yearly_aggregations(
       x_daily = swa_daily,
-      # (Monthly) mean air temperature
-      temp_monthly = extract_from_sw2(
-        path = path,
-        name_sw2_run = name_sw2_run,
-        id_scen = id_scen_used[k1],
-        years = list_years_scen_used[[k1]],
-        sw2_tp = "Month",
-        sw2_outs = "TEMP",
-        sw2_vars = "avg_C",
-        varnames_are_fixed = TRUE
-      ),
+      temp_monthly = sim_data[["mon"]],
       fun_time = mean,
       output = c("values", "seasonal_variability", "seasonality")
     ))
@@ -674,11 +712,24 @@ calc_DSI <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    dry_daily <- get_wetdry(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        swp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SWPMATRIC",
+          sw2_vars = c(swp = "Lyr"),
+          varnames_are_fixed = FALSE
+        )
+      )
+    )
+
+    # Daily wet/dry conditions
+    dry_daily <- get_wetdry(
+      sim_swp_daily = sim_data[["swp_daily"]],
       soils = soils,
       used_depth_range_cm = used_depth_range_cm,
       sm_periods = list(op = `<`, limit = SWP_limit_MPa)
@@ -769,7 +820,7 @@ metric_DSIat0to100cm30bar <- function(
 # For the last event before mid-year and first event after mid-year where
 # mid-year = July 15 (circa summer solstice + 1 month)
 get_frost_doy <- function(
-  path, name_sw2_run, id_scen, years,
+  sim_tmin_daily,
   Temp_limit_C = -5,
   hemisphere_NS = c("N", "S"),
   include_year = FALSE,
@@ -778,19 +829,7 @@ get_frost_doy <- function(
   hemisphere_NS <- match.arg(hemisphere_NS)
   stopifnot(hemisphere_NS == "N") #TODO: implement for southern hemisphere
 
-  #--- (Daily) minimum air temperature
-  temp_daily <- extract_from_sw2(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    years = years,
-    id_scen = id_scen,
-    sw2_tp = "Day",
-    sw2_outs = "TEMP",
-    sw2_vars = "min_C",
-    varnames_are_fixed = TRUE
-  )
-
-  is_frost <- temp_daily[["values"]][[1]] < Temp_limit_C
+  is_frost <- sim_tmin_daily[["values"]][["tmin"]] < Temp_limit_C
 
   # Mid-year: summer solstice + 1 month
   # North: June solstice (Jun 20-22 = 171-173)
@@ -799,7 +838,7 @@ get_frost_doy <- function(
 
   res <- as.matrix(aggregate(
     x = is_frost,
-    by = list(Year = temp_daily[["time"]][, "Year"]),
+    by = list(Year = sim_tmin_daily[["time"]][, "Year"]),
     function(x) {
       tmp <- which(x)
       c(
@@ -823,11 +862,24 @@ metric_FrostDaysAtNeg5C <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    res[[k1]] <- t(get_frost_doy(
+    #--- (Daily) minimum air temperature
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        day = list(
+          sw2_tp = "Day",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmin = "min_C"),
+          varnames_are_fixed = TRUE
+        )
+      )
+    )
+
+    res[[k1]] <- t(get_frost_doy(
+      sim_tmin_daily = sim_data[["day"]],
       Temp_limit_C = -5
     ))
   }
@@ -848,29 +900,33 @@ metric_CorTempPPT <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    vals_monthly <- extract_from_sw2(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
-      sw2_tp = "Month",
-      sw2_outs = c("TEMP", "PRECIP"),
-      sw2_vars = c("min_C", "ppt"),
-      varnames_are_fixed = TRUE
+      output_sets = list(
+        mon = list(
+          sw2_tp = "Month",
+          sw2_outs = c("TEMP", "PRECIP"),
+          sw2_vars = c(tmin = "min_C", "ppt"),
+          varnames_are_fixed = TRUE
+        )
+      )
     )
 
     tmp <- as.vector(by(
       data = cbind(
-        vals_monthly[["values"]][["min_C"]],
-        vals_monthly[["values"]][["ppt"]]
+        sim_data[["mon"]][["values"]][["tmin"]],
+        sim_data[["mon"]][["values"]][["ppt"]]
       ),
-      INDICES = vals_monthly[["time"]][, "Year"],
+      INDICES = sim_data[["mon"]][["time"]][, "Year"],
       FUN = function(x) cor(x[, 1], x[, 2])
     ))
 
     res[[k1]] <- if (include_year) {
       rbind(
-        Year = unique(vals_monthly[["time"]][, "Year"]),
+        Year = unique(sim_data[["mon"]][["time"]][, "Year"]),
         seasonality = tmp
       )
     } else {
@@ -894,38 +950,37 @@ get_SW2flux <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    tmp_mon <- extract_from_sw2(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
-      sw2_tp = "Month",
-      sw2_outs = sw2_out,
-      sw2_vars = sw2_var,
-      varnames_are_fixed = TRUE
+      output_sets = list(
+        mon = list(
+          sw2_tp = "Month",
+          sw2_outs = sw2_out,
+          sw2_vars = sw2_var,
+          varnames_are_fixed = TRUE
+        ),
+        yr = list(
+          sw2_tp = "Year",
+          sw2_outs = sw2_out,
+          sw2_vars = sw2_var,
+          varnames_are_fixed = TRUE
+        )
+      )
     )
 
-    tmp_yr <- extract_from_sw2(
-      path = path,
-      name_sw2_run = name_sw2_run,
-      id_scen = id_scen_used[k1],
-      years = list_years_scen_used[[k1]],
-      sw2_tp = "Year",
-      sw2_outs = sw2_out,
-      sw2_vars = sw2_var,
-      varnames_are_fixed = TRUE
-    )
-
-    ts_years <- tmp_yr[["time"]][, "Year"]
+    ts_years <- sim_data[["yr"]][["time"]][, "Year"]
 
     res[[k1]] <- rbind(
       format_yearly_to_matrix(
-        x = lapply(tmp_yr[["values"]], transform),
+        x = lapply(sim_data[["yr"]][["values"]], transform),
         years = ts_years,
         out_labels = out_labels
       ),
       format_monthly_to_matrix(
-        x = lapply(tmp_mon[["values"]], transform),
+        x = lapply(sim_data[["mon"]][["values"]], transform),
         years = ts_years,
         out_labels = out_labels
       )
@@ -1017,65 +1072,60 @@ metric_Climate_Annual <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    tmp_daily <- extract_from_sw2(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
-      sw2_tp = "Day",
-      sw2_outs = c("TEMP", "TEMP", "TEMP"),
-      sw2_vars = c("max_C", "min_C", "avg_C"),
-      varnames_are_fixed = TRUE
+      output_sets = list(
+        day = list(
+          sw2_tp = "Day",
+          sw2_outs = c("TEMP", "TEMP", "TEMP"),
+          sw2_vars = c(tmax = "max_C", tmin = "min_C", tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        ),
+        mon = list(
+          sw2_tp = "Month",
+          sw2_outs = c(
+            "PRECIP", "PRECIP", "PRECIP", "PRECIP",
+            "TEMP", "TEMP", "TEMP",
+            "SNOWPACK",
+            "PET", "AET"
+          ),
+          sw2_vars = c(
+            "ppt", "rain", "snow_fall", "snowmelt",
+            tmax = "max_C", tmin = "min_C", tmean = "avg_C",
+            swe = "snowpackWaterEquivalent_cm",
+            pet = "pet_cm", et = "evapotr_cm"
+          ),
+          varnames_are_fixed = TRUE
+        ),
+        yr = list(
+          sw2_tp = "Year",
+          sw2_outs = c(
+            "PRECIP", "PRECIP", "PRECIP",
+            "TEMP", "TEMP", "TEMP",
+            "SNOWPACK",
+            "PET", "AET"
+          ),
+          sw2_vars = c(
+            "ppt", "rain", "snow_fall",
+            tmax = "max_C", tmin = "min_C", tmean = "avg_C",
+            swe = "snowpackWaterEquivalent_cm",
+            pet = "pet_cm", et = "evapotr_cm"
+          ),
+          varnames_are_fixed = TRUE
+        )
+      )
     )
 
-    tmp_mon <- extract_from_sw2(
-      path = path,
-      name_sw2_run = name_sw2_run,
-      id_scen = id_scen_used[k1],
-      years = list_years_scen_used[[k1]],
-      sw2_tp = "Month",
-      sw2_outs = c(
-        "PRECIP", "PRECIP", "PRECIP", "PRECIP",
-        "TEMP", "TEMP", "TEMP",
-        "SNOWPACK",
-        "PET", "AET"
-      ),
-      sw2_vars = c(
-        "ppt", "rain", "snow_fall", "snowmelt",
-        "max_C", "avg_C", "min_C",
-        "snowpackWaterEquivalent_cm",
-        "pet_cm", "evapotr_cm"
-      ),
-      varnames_are_fixed = TRUE
-    )
-
-    tmp_yr <- extract_from_sw2(
-      path = path,
-      name_sw2_run = name_sw2_run,
-      id_scen = id_scen_used[k1],
-      years = list_years_scen_used[[k1]],
-      sw2_tp = "Year",
-      sw2_outs = c(
-        "PRECIP", "PRECIP", "PRECIP",
-        "TEMP", "TEMP", "TEMP",
-        "SNOWPACK",
-        "PET", "AET"
-      ),
-      sw2_vars = c(
-        "ppt", "rain", "snow_fall",
-        "max_C", "avg_C", "min_C",
-        "snowpackWaterEquivalent_cm",
-        "pet_cm", "evapotr_cm"
-      ),
-      varnames_are_fixed = TRUE
-    )
 
     # Helper variables
-    ts_years <- tmp_yr[["time"]][, "Year"]
+    ts_years <- sim_data[["yr"]][["time"]][, "Year"]
 
     PPTinJAS <- tapply(
-      X = tmp_mon[["values"]][["ppt"]],
-      INDEX = tmp_mon[["time"]][, "Year"],
+      X = sim_data[["mon"]][["values"]][["ppt"]],
+      INDEX = sim_data[["mon"]][["time"]][, "Year"],
       FUN = function(x) sum(x[7:9])
     )
 
@@ -1084,12 +1134,12 @@ metric_Climate_Annual <- function(
     res[[k1]] <- rbind(
       # Potential evapotranspiration
       format_yearly_to_matrix(
-        x = 10 * tmp_yr[["values"]][["pet_cm"]],
+        x = 10 * sim_data[["yr"]][["values"]][["pet"]],
         years = ts_years,
         out_labels = "PET_mm"
       ),
       format_monthly_to_matrix(
-        x = 10 * tmp_mon[["values"]][["pet_cm"]],
+        x = 10 * sim_data[["mon"]][["values"]][["pet"]],
         years = ts_years,
         out_labels = "PET_mm"
       ),
@@ -1097,16 +1147,16 @@ metric_Climate_Annual <- function(
       # Climatic water deficit
       format_yearly_to_matrix(
         x = 10 * (
-          tmp_yr[["values"]][["pet_cm"]] -
-          tmp_yr[["values"]][["evapotr_cm"]]
+          sim_data[["yr"]][["values"]][["pet"]] -
+          sim_data[["yr"]][["values"]][["et"]]
         ),
         years = ts_years,
         out_labels = "CWD_mm"
       ),
       format_monthly_to_matrix(
         x = 10 * (
-          tmp_mon[["values"]][["pet_cm"]] -
-          tmp_mon[["values"]][["evapotr_cm"]]
+          sim_data[["mon"]][["values"]][["pet"]] -
+          sim_data[["mon"]][["values"]][["et"]]
         ),
         years = ts_years,
         out_labels = "CWD_mm"
@@ -1114,36 +1164,36 @@ metric_Climate_Annual <- function(
 
       # Maximum temperature (mean across year)
       format_yearly_to_matrix(
-        x = tmp_yr[["values"]][["max_C"]],
+        x = sim_data[["yr"]][["values"]][["tmax"]],
         years = ts_years,
         out_labels = "Tmax_mean_C"
       ),
       format_monthly_to_matrix(
-        x = tmp_mon[["values"]][["max_C"]],
+        x = sim_data[["mon"]][["values"]][["tmax"]],
         years = ts_years,
         out_labels = "Tmax_mean_C"
       ),
 
       # Mean temperature
       format_yearly_to_matrix(
-        x = tmp_yr[["values"]][["avg_C"]],
+        x = sim_data[["yr"]][["values"]][["tmean"]],
         years = ts_years,
         out_labels = "Tmean_mean_C"
       ),
       format_monthly_to_matrix(
-        x = tmp_mon[["values"]][["avg_C"]],
+        x = sim_data[["mon"]][["values"]][["tmean"]],
         years = ts_years,
         out_labels = "Tmean_mean_C"
       ),
 
       # Minimum temperature (mean across year)
       format_yearly_to_matrix(
-        x = tmp_yr[["values"]][["min_C"]],
+        x = sim_data[["yr"]][["values"]][["tmin"]],
         years = ts_years,
         out_labels = "Tmin_mean_C"
       ),
       format_monthly_to_matrix(
-        x = tmp_mon[["values"]][["min_C"]],
+        x = sim_data[["mon"]][["values"]][["tmin"]],
         years = ts_years,
         out_labels = "Tmin_mean_C"
       ),
@@ -1151,16 +1201,17 @@ metric_Climate_Annual <- function(
       # Temperature range (difference between tmax and tmin)
       Trange_diurnal_C = tapply(
         X =
-          tmp_daily[["values"]][["max_C"]] - tmp_daily[["values"]][["min_C"]],
-        INDEX = tmp_daily[["time"]][, "Year"],
+          sim_data[["day"]][["values"]][["tmax"]] -
+          sim_data[["day"]][["values"]][["tmin"]],
+        INDEX = sim_data[["day"]][["time"]][, "Year"],
         FUN = mean
       ),
       format_yearly_to_matrix(
         x = tapply(
           X =
-            tmp_daily[["values"]][["max_C"]] -
-            tmp_daily[["values"]][["min_C"]],
-          INDEX = tmp_daily[["time"]][, "Year"],
+            sim_data[["day"]][["values"]][["tmax"]] -
+            sim_data[["day"]][["values"]][["tmin"]],
+          INDEX = sim_data[["day"]][["time"]][, "Year"],
           FUN = mean
         ),
         years = ts_years,
@@ -1169,11 +1220,11 @@ metric_Climate_Annual <- function(
       format_monthly_to_matrix(
         x = t(tapply(
           X =
-            tmp_daily[["values"]][["max_C"]] -
-            tmp_daily[["values"]][["min_C"]],
+            sim_data[["day"]][["values"]][["tmax"]] -
+            sim_data[["day"]][["values"]][["tmin"]],
           INDEX = list(
-            tmp_daily[["time"]][, "Year"],
-            tmp_daily[["time"]][, "Month"]
+            sim_data[["day"]][["time"]][, "Year"],
+            sim_data[["day"]][["time"]][, "Month"]
           ),
           FUN = mean
         )),
@@ -1184,8 +1235,8 @@ metric_Climate_Annual <- function(
       # SD of mean temperature
       format_yearly_to_matrix(
         x = tapply(
-          X = tmp_daily[["values"]][["avg_C"]],
-          INDEX = tmp_daily[["time"]][, "Year"],
+          X = sim_data[["day"]][["values"]][["tmean"]],
+          INDEX = sim_data[["day"]][["time"]][, "Year"],
           FUN = sd
         ),
         years = ts_years,
@@ -1193,10 +1244,10 @@ metric_Climate_Annual <- function(
       ),
       format_monthly_to_matrix(
         x = t(tapply(
-          X = tmp_daily[["values"]][["avg_C"]],
+          X = sim_data[["day"]][["values"]][["tmean"]],
           INDEX = list(
-            tmp_daily[["time"]][, "Year"],
-            tmp_daily[["time"]][, "Month"]
+            sim_data[["day"]][["time"]][, "Year"],
+            sim_data[["day"]][["time"]][, "Month"]
           ),
           FUN = sd
         )),
@@ -1207,8 +1258,8 @@ metric_Climate_Annual <- function(
       # Temperature of hottest month
       format_yearly_to_matrix(
         x = tapply(
-          X = tmp_mon[["values"]][["avg_C"]],
-          INDEX = tmp_mon[["time"]][, "Year"],
+          X = sim_data[["mon"]][["values"]][["tmean"]],
+          INDEX = sim_data[["mon"]][["time"]][, "Year"],
           FUN = max
         ),
         years = ts_years,
@@ -1218,8 +1269,8 @@ metric_Climate_Annual <- function(
       # Temperature of coldest month
       format_yearly_to_matrix(
         x = tapply(
-          X = tmp_mon[["values"]][["avg_C"]],
-          INDEX = tmp_mon[["time"]][, "Year"],
+          X = sim_data[["mon"]][["values"]][["tmean"]],
+          INDEX = sim_data[["mon"]][["time"]][, "Year"],
           FUN = min
         ),
         years = ts_years,
@@ -1228,66 +1279,68 @@ metric_Climate_Annual <- function(
 
       # Precipitation
       format_yearly_to_matrix(
-        x = 10 * tmp_yr[["values"]][["ppt"]],
+        x = 10 * sim_data[["yr"]][["values"]][["ppt"]],
         years = ts_years,
         out_labels = "PPT_mm"
       ),
       format_monthly_to_matrix(
-        x = 10 * tmp_mon[["values"]][["ppt"]],
+        x = 10 * sim_data[["mon"]][["values"]][["ppt"]],
         years = ts_years,
         out_labels = "PPT_mm"
       ),
 
       format_yearly_to_matrix(
-        x = 10 * tmp_yr[["values"]][["rain"]],
+        x = 10 * sim_data[["yr"]][["values"]][["rain"]],
         years = ts_years,
         out_labels = "Rain_mm"
       ),
       format_monthly_to_matrix(
-        x = 10 * tmp_mon[["values"]][["rain"]],
+        x = 10 * sim_data[["mon"]][["values"]][["rain"]],
         years = ts_years,
         out_labels = "Rain_mm"
       ),
 
       format_yearly_to_matrix(
-        x = 10 * tmp_yr[["values"]][["snow_fall"]],
+        x = 10 * sim_data[["yr"]][["values"]][["snow_fall"]],
         years = ts_years,
         out_labels = "Snowfall_mm"
       ),
       format_monthly_to_matrix(
-        x = 10 * tmp_mon[["values"]][["snow_fall"]],
+        x = 10 * sim_data[["mon"]][["values"]][["snow_fall"]],
         years = ts_years,
         out_labels = "Snowfall_mm"
       ),
 
       format_yearly_to_matrix(
-        x = 10 * tmp_yr[["values"]][["snowpackWaterEquivalent_cm"]],
+        x = 10 * sim_data[["yr"]][["values"]][["swe"]],
         years = ts_years,
         out_labels = "Snowpack_SWE_mm"
       ),
       format_monthly_to_matrix(
-        x = 10 * tmp_mon[["values"]][["snowpackWaterEquivalent_cm"]],
+        x = 10 * sim_data[["mon"]][["values"]][["swe"]],
         years = ts_years,
         out_labels = "Snowpack_SWE_mm"
       ),
 
       # Monthly snowmelt
       format_monthly_to_matrix(
-        x = 10 * tmp_mon[["values"]][["snowmelt"]],
+        x = 10 * sim_data[["mon"]][["values"]][["snowmelt"]],
         years = ts_years,
         out_labels = "Snowmelt_mm"
       ),
 
       # Ratio of rain to all precipitation
       format_yearly_to_matrix(
-        x = tmp_yr[["values"]][["rain"]] / tmp_yr[["values"]][["ppt"]],
+        x =
+          sim_data[["yr"]][["values"]][["rain"]] /
+          sim_data[["yr"]][["values"]][["ppt"]],
         years = ts_years,
         out_labels = "Rain_to_PPT"
       ),
 
       # Ratio of July, August, and September precipitation to annual
       format_yearly_to_matrix(
-        x = PPTinJAS / tmp_yr[["values"]][["ppt"]],
+        x = PPTinJAS / sim_data[["yr"]][["values"]][["ppt"]],
         years = ts_years,
         out_labels = "PPTinJAS_to_PPT"
       ),
@@ -1302,8 +1355,8 @@ metric_Climate_Annual <- function(
       # Precipitation of the wettest month
       format_yearly_to_matrix(
         x = 10 * tapply(
-          X = tmp_mon[["values"]][["ppt"]],
-          INDEX = tmp_mon[["time"]][, "Year"],
+          X = sim_data[["mon"]][["values"]][["ppt"]],
+          INDEX = sim_data[["mon"]][["time"]][, "Year"],
           FUN = max
         ),
         years = ts_years,
@@ -1314,8 +1367,8 @@ metric_Climate_Annual <- function(
       # Precipitation of the driest month
       format_yearly_to_matrix(
         x = 10 * tapply(
-          X = tmp_mon[["values"]][["ppt"]],
-          INDEX = tmp_mon[["time"]][, "Year"],
+          X = sim_data[["mon"]][["values"]][["ppt"]],
+          INDEX = sim_data[["mon"]][["time"]][, "Year"],
           FUN = min
         ),
         years = ts_years,

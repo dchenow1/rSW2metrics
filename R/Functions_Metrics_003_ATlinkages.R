@@ -63,11 +63,23 @@ get_SWA_JJA <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    swa_daily <- calc_SWA(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        vwc_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "VWCMATRIC",
+          sw2_vars = c(vwc = "Lyr"),
+          varnames_are_fixed = FALSE
+        )
+      )
+    )
+
+    swa_daily <- calc_SWA(
+      sim_vwc_daily = sim_data[["vwc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
       used_depth_range_cm = used_depth_range_cm
@@ -361,20 +373,24 @@ metric_PPT_daily <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    tmp_daily <- extract_from_sw2(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
-      sw2_tp = "Day",
-      sw2_outs = "PRECIP",
-      sw2_vars = "ppt",
-      varnames_are_fixed = TRUE
+      output_sets = list(
+        day = list(
+          sw2_tp = "Day",
+          sw2_outs = "PRECIP",
+          sw2_vars = "ppt",
+          varnames_are_fixed = TRUE
+        )
+      )
     )
 
     res[[k1]] <- format_daily_to_matrix(
-      x = 10 * tmp_daily[["values"]][["ppt"]],
-      time = tmp_daily[["time"]],
+      x = 10 * sim_data[["day"]][["values"]][["ppt"]],
+      time = sim_data[["day"]][["time"]],
       out_labels = "PPT_mm",
       include_year = include_year
     )
@@ -395,20 +411,24 @@ metric_Tmean_daily <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    tmp_daily <- extract_from_sw2(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
-      sw2_tp = "Day",
-      sw2_outs = "TEMP",
-      sw2_vars = "avg_C",
-      varnames_are_fixed = TRUE
+      output_sets = list(
+        day = list(
+          sw2_tp = "Day",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        )
+      )
     )
 
     res[[k1]] <- format_daily_to_matrix(
-      x = tmp_daily[["values"]][["avg_C"]],
-      time = tmp_daily[["time"]],
+      x = sim_data[["day"]][["values"]][["tmean"]],
+      time = sim_data[["day"]][["time"]],
       out_labels = "Tmean_C",
       include_year = include_year
     )
@@ -430,19 +450,31 @@ get_SWA_daily <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    tmp_daily <- calc_SWA(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        vwc_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "VWCMATRIC",
+          sw2_vars = c(vwc = "Lyr"),
+          varnames_are_fixed = FALSE
+        )
+      )
+    )
+
+    swa_daily <- calc_SWA(
+      sim_vwc_daily = sim_data[["vwc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
       used_depth_range_cm = used_depth_range_cm
     )
 
     res[[k1]] <- format_daily_to_matrix(
-      x = 10 * tmp_daily[["values"]][[1]],
-      time = tmp_daily[["time"]],
+      x = 10 * swa_daily[["values"]][[1]],
+      time = swa_daily[["time"]],
       out_labels = out_label,
       include_year = include_year
     )
@@ -684,20 +716,24 @@ metric_DR_daily <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    tmp_daily <- extract_from_sw2(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
-      sw2_tp = "Day",
-      sw2_outs = "DEEPSWC",
-      sw2_vars = "lowLayerDrain_cm",
-      varnames_are_fixed = TRUE
+      output_sets = list(
+        day = list(
+          sw2_tp = "Day",
+          sw2_outs = "DEEPSWC",
+          sw2_vars = c(dr = "lowLayerDrain_cm"),
+          varnames_are_fixed = TRUE
+        )
+      )
     )
 
     res[[k1]] <- format_daily_to_matrix(
-      x = 10 * tmp_daily[["values"]][["lowLayerDrain_cm"]],
-      time = tmp_daily[["time"]],
+      x = 10 * sim_data[["day"]][["values"]][["dr"]],
+      time = sim_data[["day"]][["time"]],
       out_labels = "DR_mm",
       include_year = include_year
     )

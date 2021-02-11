@@ -1,8 +1,7 @@
 
 #--- Plant recruitment index:
 calc_RecruitmentIndex_v2 <- function(
-  path, name_sw2_run, id_scen,
-  years,
+  sim_data,
   soils,
   hemisphere_NS = c("N", "S"),
   recruitment_depth_range_cm = c(5, 30),
@@ -33,10 +32,7 @@ calc_RecruitmentIndex_v2 <- function(
 
   # WDD that initiates a recruitment period (germination window)
   wdd_start <- get_MDD(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen = id_scen,
-    years = years,
+    sim_data = sim_data,
     soils = soils,
     used_depth_range_cm = init_depth_range_cm,
     t_periods = list(op = `>`, limit = Temp_limit_C),
@@ -45,10 +41,7 @@ calc_RecruitmentIndex_v2 <- function(
 
   # WDD for recruitment
   wdd_recruit <- get_MDD(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen = id_scen,
-    years = years,
+    sim_data = sim_data,
     soils = soils,
     used_depth_range_cm = recruitment_depth_range_cm,
     t_periods = list(op = `>`, limit = Temp_limit_C),
@@ -59,10 +52,7 @@ calc_RecruitmentIndex_v2 <- function(
 
   # DDD that stops a recruitment period
   ddd_stop <- get_MDD(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen = id_scen,
-    years = years,
+    sim_data = sim_data,
     soils = soils,
     used_depth_range_cm = stop_depth_range_cm,
     t_periods = list(op = `>`, limit = Temp_limit_C),
@@ -71,10 +61,7 @@ calc_RecruitmentIndex_v2 <- function(
 
   # (Absence of) TDD that stops a recruitment period
   tdd_nostop <- get_MDD(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen = id_scen,
-    years = years,
+    sim_data = sim_data,
     soils = soils,
     t_periods = list(op = `>`, limit = Temp_limit_C),
     sm_periods = list(op = `>`, limit = -Inf)
@@ -336,11 +323,35 @@ metric_RecruitmentIndex_v4 <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    res[[k1]] <- t(calc_RecruitmentIndex_v2(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        swp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SWPMATRIC",
+          sw2_vars = c(swp = "Lyr"),
+          varnames_are_fixed = FALSE
+        ),
+        temp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        ),
+        swe_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SNOWPACK",
+          sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
+          varnames_are_fixed = TRUE
+        )
+      )
+    )
+
+    res[[k1]] <- t(calc_RecruitmentIndex_v2(
+      sim_data = sim_data,
       soils = soils,
       hemisphere_NS = "N",
       recruitment_depth_range_cm = recruitment_depth_range_cm,
@@ -406,11 +417,35 @@ metric_RecruitmentIndex_v5 <- function(
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
-    res[[k1]] <- t(calc_RecruitmentIndex_v2(
+    sim_data <- collect_sw2_sim_data(
       path = path,
       name_sw2_run = name_sw2_run,
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
+      output_sets = list(
+        swp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SWPMATRIC",
+          sw2_vars = c(swp = "Lyr"),
+          varnames_are_fixed = FALSE
+        ),
+        temp_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "TEMP",
+          sw2_vars = c(tmean = "avg_C"),
+          varnames_are_fixed = TRUE
+        ),
+        swe_daily = list(
+          sw2_tp = "Day",
+          sw2_outs = "SNOWPACK",
+          sw2_vars = c(swe = "snowpackWaterEquivalent_cm"),
+          varnames_are_fixed = TRUE
+        )
+      )
+    )
+
+    res[[k1]] <- t(calc_RecruitmentIndex_v2(
+      sim_data = sim_data,
       soils = soils,
       hemisphere_NS = "N",
       recruitment_depth_range_cm = recruitment_depth_range_cm,

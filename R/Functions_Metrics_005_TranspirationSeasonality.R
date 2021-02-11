@@ -372,9 +372,7 @@ calc_transp_peaks_v2 <- function(
 
 
 calc_TranspirationSeasonality_v1 <- function(
-  path, name_sw2_run, id_scen_used,
-  list_years_scen_used,
-  include_year = FALSE,
+  sim_T_daily_by_lyr,
   # Identify peak size by volume (valley - peak - valley) or by value at peak
   peak_type = c("value", "volume"),
   # DOY of `transp_timing_probs` quantiles of cumulative transpiration
@@ -390,71 +388,46 @@ calc_TranspirationSeasonality_v1 <- function(
   # by at least `peak2_drop_factor` * main peak size
   peak2_increase_factor = 1 / 6,
   # Secondary peak should be at least `peak2_min_factor` * main peak size
-  peak2_min_factor = 1 / 3,
-  ...
+  peak2_min_factor = 1 / 3
 ) {
-  res <- list()
+  transp <- 10 * rowSums(sim_T_daily_by_lyr[["values"]][[1]])
 
-  for (k1 in seq_along(id_scen_used)) {
-    T_by_lyr <- extract_from_sw2(
-      path = path,
-      name_sw2_run = name_sw2_run,
-      id_scen = id_scen_used[k1],
-      years = list_years_scen_used[[k1]],
-      sw2_tp = "Day",
-      sw2_outs = "TRANSP",
-      sw2_vars = "transp_total_Lyr",
-      varnames_are_fixed = FALSE
-    )
+  # DOY of 10%, 50%, and 90% percentile of cumulative transpiration
+  # Annual total transpiration (mm)
+  xtmp1 <- calc_transp_seasonality(
+    x = transp,
+    time = sim_T_daily_by_lyr[["time"]][, "Year"],
+    probs = transp_timing_probs
+  )
 
-    transp <- 10 * rowSums(T_by_lyr[["values"]][[1]])
+  tmp1 <- t(xtmp1[["x"]])
+  rownames(tmp1) <- c(
+    "Transpiration_mm",
+    paste0("Tcumulative_", round(100 * transp_timing_probs), "perc_DOY")
+  )
 
-    # DOY of 10%, 50%, and 90% percentile of cumulative transpiration
-    # Annual total transpiration (mm)
-    xtmp1 <- calc_transp_seasonality(
-      x = transp,
-      time = T_by_lyr[["time"]][, "Year"],
-      probs = transp_timing_probs
-    )
+  # DOY of two maxima of a smoothed transpiration
+  xtmp2 <- calc_transp_peaks_v1(
+    x = transp,
+    time = sim_T_daily_by_lyr[["time"]][, "Year"],
+    peak_type = peak_type,
+    days_smoothing = days_smoothing,
+    days_window = days_window,
+    peak2_drop_factor = peak2_drop_factor,
+    peak2_increase_factor = peak2_increase_factor,
+    peak2_min_factor = peak2_min_factor
+  )
 
-    tmp1 <- t(xtmp1[["x"]])
-    rownames(tmp1) <- c(
-      "Transpiration_mm",
-      paste0("Tcumulative_", round(100 * transp_timing_probs), "perc_DOY")
-    )
+  tmp2 <- t(xtmp2[["x"]][, c(1, 3), drop = FALSE])
+  rownames(tmp2) <- paste0("Transpiration_peak", 1:2, "_DOY")
 
-    # DOY of two maxima of a smoothed transpiration
-    xtmp2 <- calc_transp_peaks_v1(
-      x = transp,
-      time = T_by_lyr[["time"]][, "Year"],
-      peak_type = peak_type,
-      days_smoothing = days_smoothing,
-      days_window = days_window,
-      peak2_drop_factor = peak2_drop_factor,
-      peak2_increase_factor = peak2_increase_factor,
-      peak2_min_factor = peak2_min_factor
-    )
-
-    tmp2 <- t(xtmp2[["x"]][, c(1, 3), drop = FALSE])
-    rownames(tmp2) <- paste0("Transpiration_peak", 1:2, "_DOY")
-
-
-    res[[k1]] <- if (include_year) {
-      rbind(Year = xtmp1[["Year"]], tmp1, tmp2)
-    } else {
-      rbind(tmp1, tmp2)
-    }
-  }
-
-  res
+  rbind(tmp1, tmp2)
 }
 
 
 
 calc_TranspirationSeasonality_v2 <- function(
-  path, name_sw2_run, id_scen_used,
-  list_years_scen_used,
-  include_year = FALSE,
+  sim_T_daily_by_lyr,
   # DOY of `transp_timing_probs` quantiles of cumulative transpiration
   transp_timing_probs = c(0.1, 0.5, 0.9),
   # Maximum number of peaks for which to return values
@@ -475,61 +448,39 @@ calc_TranspirationSeasonality_v2 <- function(
   peaksize_min_factor = 1 / 4,
   ...
 ) {
-  res <- list()
+  transp <- 10 * rowSums(sim_T_daily_by_lyr[["values"]][[1]])
 
-  for (k1 in seq_along(id_scen_used)) {
-    T_by_lyr <- extract_from_sw2(
-      path = path,
-      name_sw2_run = name_sw2_run,
-      id_scen = id_scen_used[k1],
-      years = list_years_scen_used[[k1]],
-      sw2_tp = "Day",
-      sw2_outs = "TRANSP",
-      sw2_vars = "transp_total_Lyr",
-      varnames_are_fixed = FALSE
-    )
+  # DOY of 10%, 50%, and 90% percentile of cumulative transpiration
+  # Annual total transpiration (mm)
+  xtmp1 <- calc_transp_seasonality(
+    x = transp,
+    time = sim_T_daily_by_lyr[["time"]][, "Year"],
+    probs = transp_timing_probs
+  )
 
-    transp <- 10 * rowSums(T_by_lyr[["values"]][[1]])
+  tmp1 <- t(xtmp1[["x"]])
+  rownames(tmp1) <- c(
+    "Transpiration_mm",
+    paste0("Tcumulative_", round(100 * transp_timing_probs), "perc_DOY")
+  )
 
-    # DOY of 10%, 50%, and 90% percentile of cumulative transpiration
-    # Annual total transpiration (mm)
-    xtmp1 <- calc_transp_seasonality(
-      x = transp,
-      time = T_by_lyr[["time"]][, "Year"],
-      probs = transp_timing_probs
-    )
+  # Count, DOY, and relative volume of smoothed transpiration peaks
+  xtmp2 <- calc_transp_peaks_v2(
+    x = transp,
+    time = sim_T_daily_by_lyr[["time"]][, "Year"],
+    N_peaks_max_reported = N_peaks_max_reported,
+    peak_type = peak_type,
+    days_smoothing = days_smoothing,
+    days_window = days_window,
+    peaks_drop_factor = peaks_drop_factor,
+    peaks_increase_factor = peaks_increase_factor,
+    peaksize_min_factor = peaksize_min_factor
+  )
 
-    tmp1 <- t(xtmp1[["x"]])
-    rownames(tmp1) <- c(
-      "Transpiration_mm",
-      paste0("Tcumulative_", round(100 * transp_timing_probs), "perc_DOY")
-    )
+  tmp2 <- t(xtmp2[["x"]])
+  rownames(tmp2) <- paste0("Transpiration_", rownames(tmp2))
 
-    # Count, DOY, and relative volume of smoothed transpiration peaks
-    xtmp2 <- calc_transp_peaks_v2(
-      x = transp,
-      time = T_by_lyr[["time"]][, "Year"],
-      N_peaks_max_reported = N_peaks_max_reported,
-      peak_type = peak_type,
-      days_smoothing = days_smoothing,
-      days_window = days_window,
-      peaks_drop_factor = peaks_drop_factor,
-      peaks_increase_factor = peaks_increase_factor,
-      peaksize_min_factor = peaksize_min_factor
-    )
-
-    tmp2 <- t(xtmp2[["x"]])
-    rownames(tmp2) <- paste0("Transpiration_", rownames(tmp2))
-
-
-    res[[k1]] <- if (include_year) {
-      rbind(Year = xtmp1[["Year"]], tmp1, tmp2)
-    } else {
-      rbind(tmp1, tmp2)
-    }
-  }
-
-  res
+  rbind(tmp1, tmp2)
 }
 
 
@@ -540,18 +491,37 @@ metric_TranspirationSeasonality_v1 <- function(
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
 
-  calc_TranspirationSeasonality_v1(
-    path, name_sw2_run, id_scen_used,
-    list_years_scen_used = list_years_scen_used,
-    include_year = FALSE,
-    peak_type = "volume",
-    transp_timing_probs = c(0.1, 0.5, 0.9),
-    days_smoothing = 15,
-    days_window = 91,
-    peak2_drop_factor = 2 / 3,
-    peak2_increase_factor = 1 / 6,
-    peak2_min_factor = 1 / 3
-  )
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    sim_data <- collect_sw2_sim_data(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      output_sets = list(
+        T_by_lyr = list(
+          sw2_tp = "Day",
+          sw2_outs = "TRANSP",
+          sw2_vars = "transp_total_Lyr",
+          varnames_are_fixed = FALSE
+        )
+      )
+    )
+
+    res[[k1]] <- calc_TranspirationSeasonality_v1(
+      sim_T_daily_by_lyr = sim_data[["T_by_lyr"]],
+      peak_type = "volume",
+      transp_timing_probs = c(0.1, 0.5, 0.9),
+      days_smoothing = 15,
+      days_window = 91,
+      peak2_drop_factor = 2 / 3,
+      peak2_increase_factor = 1 / 6,
+      peak2_min_factor = 1 / 3
+    )
+  }
+
+  res
 }
 
 metric_TranspirationSeasonality_v2 <- function(
@@ -560,19 +530,37 @@ metric_TranspirationSeasonality_v2 <- function(
   ...
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
+  res <- list()
 
-  calc_TranspirationSeasonality_v1(
-    path, name_sw2_run, id_scen_used,
-    list_years_scen_used = list_years_scen_used,
-    include_year = FALSE,
-    peak_type = "value",
-    transp_timing_probs = c(0.1, 0.5, 0.9),
-    days_smoothing = 15,
-    days_window = 91,
-    peak2_drop_factor = 2 / 3,
-    peak2_increase_factor = 1 / 6,
-    peak2_min_factor = 1 / 3
-  )
+  for (k1 in seq_along(id_scen_used)) {
+    sim_data <- collect_sw2_sim_data(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      output_sets = list(
+        T_by_lyr = list(
+          sw2_tp = "Day",
+          sw2_outs = "TRANSP",
+          sw2_vars = "transp_total_Lyr",
+          varnames_are_fixed = FALSE
+        )
+      )
+    )
+
+    res[[k1]] <- calc_TranspirationSeasonality_v1(
+      sim_T_daily_by_lyr = sim_data[["T_by_lyr"]],
+      peak_type = "value",
+      transp_timing_probs = c(0.1, 0.5, 0.9),
+      days_smoothing = 15,
+      days_window = 91,
+      peak2_drop_factor = 2 / 3,
+      peak2_increase_factor = 1 / 6,
+      peak2_min_factor = 1 / 3
+    )
+  }
+
+  res
 }
 
 
@@ -583,18 +571,37 @@ metric_TranspirationSeasonality_v3 <- function(
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
 
-  calc_TranspirationSeasonality_v1(
-    path, name_sw2_run, id_scen_used,
-    list_years_scen_used = list_years_scen_used,
-    include_year = FALSE,
-    peak_type = "value",
-    transp_timing_probs = c(0.1, 0.5, 0.9),
-    days_smoothing = 31,
-    days_window = 91,
-    peak2_drop_factor = 2 / 3,
-    peak2_increase_factor = 1 / 6,
-    peak2_min_factor = 1 / 3
-  )
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    sim_data <- collect_sw2_sim_data(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      output_sets = list(
+        T_by_lyr = list(
+          sw2_tp = "Day",
+          sw2_outs = "TRANSP",
+          sw2_vars = "transp_total_Lyr",
+          varnames_are_fixed = FALSE
+        )
+      )
+    )
+
+    res[[k1]] <- calc_TranspirationSeasonality_v1(
+      sim_T_daily_by_lyr = sim_data[["T_by_lyr"]],
+      peak_type = "value",
+      transp_timing_probs = c(0.1, 0.5, 0.9),
+      days_smoothing = 31,
+      days_window = 91,
+      peak2_drop_factor = 2 / 3,
+      peak2_increase_factor = 1 / 6,
+      peak2_min_factor = 1 / 3
+    )
+  }
+
+  res
 }
 
 
@@ -606,19 +613,38 @@ metric_TranspirationSeasonality_v4 <- function(
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
 
-  calc_TranspirationSeasonality_v2(
-    path, name_sw2_run, id_scen_used,
-    list_years_scen_used = list_years_scen_used,
-    include_year = FALSE,
-    transp_timing_probs = c(0.1, 0.5, 0.9),
-    N_peaks_max_reported = 4L,
-    peak_type = "value",
-    days_smoothing = 15,
-    days_window = 91,
-    peaks_drop_factor = 2 / 3,
-    peaks_increase_factor = 1 / 6,
-    peaksize_min_factor = 1 / 3
-  )
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    sim_data <- collect_sw2_sim_data(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      output_sets = list(
+        T_by_lyr = list(
+          sw2_tp = "Day",
+          sw2_outs = "TRANSP",
+          sw2_vars = "transp_total_Lyr",
+          varnames_are_fixed = FALSE
+        )
+      )
+    )
+
+    res[[k1]] <- calc_TranspirationSeasonality_v2(
+      sim_T_daily_by_lyr = sim_data[["T_by_lyr"]],
+      transp_timing_probs = c(0.1, 0.5, 0.9),
+      N_peaks_max_reported = 4L,
+      peak_type = "value",
+      days_smoothing = 15,
+      days_window = 91,
+      peaks_drop_factor = 2 / 3,
+      peaks_increase_factor = 1 / 6,
+      peaksize_min_factor = 1 / 3
+    )
+  }
+
+  res
 }
 
 metric_TranspirationSeasonality_v5 <- function(
@@ -628,17 +654,36 @@ metric_TranspirationSeasonality_v5 <- function(
 ) {
   stopifnot(check_metric_arguments(out = match.arg(out)))
 
-  calc_TranspirationSeasonality_v2(
-    path, name_sw2_run, id_scen_used,
-    list_years_scen_used = list_years_scen_used,
-    include_year = FALSE,
-    transp_timing_probs = c(0.1, 0.5, 0.9),
-    N_peaks_max_reported = 4L,
-    peak_type = "volume",
-    days_smoothing = 15,
-    days_window = 91,
-    peaks_drop_factor = 2 / 3,
-    peaks_increase_factor = 1 / 6,
-    peaksize_min_factor = 1 / 4
-  )
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    sim_data <- collect_sw2_sim_data(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      output_sets = list(
+        T_by_lyr = list(
+          sw2_tp = "Day",
+          sw2_outs = "TRANSP",
+          sw2_vars = "transp_total_Lyr",
+          varnames_are_fixed = FALSE
+        )
+      )
+    )
+
+    res[[k1]] <- calc_TranspirationSeasonality_v2(
+      sim_T_daily_by_lyr = sim_data[["T_by_lyr"]],
+      transp_timing_probs = c(0.1, 0.5, 0.9),
+      N_peaks_max_reported = 4L,
+      peak_type = "volume",
+      days_smoothing = 15,
+      days_window = 91,
+      peaks_drop_factor = 2 / 3,
+      peaks_increase_factor = 1 / 6,
+      peaksize_min_factor = 1 / 4
+    )
+  }
+
+  res
 }
