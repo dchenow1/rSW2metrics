@@ -111,24 +111,28 @@ check_soillayer_availability <- function(
 
 
 #------ SEUG DEVELOPMENT ERA ------
-groupid_by_days <- memoise::memoize(
-  function(start_year, end_year, group_by_month, first_month_of_year = 1L) {
-    days <- seq(
-      from = ISOdate(start_year, 1, 1, tz = "UTC"),
-      to = ISOdate(end_year, 12, 31, tz = "UTC"),
-      by = "1 day"
-    )
-    months <- as.POSIXlt(days)$mon + 1
-    rlels <- rle(months)[["lengths"]]
+groupid_by_days <- function(
+  start_year,
+  end_year,
+  group_by_month,
+  first_month_of_year = 1L
+) {
+  days <- seq(
+    from = ISOdate(start_year, 1, 1, tz = "UTC"),
+    to = ISOdate(end_year, 12, 31, tz = "UTC"),
+    by = "1 day"
+  )
+  months <- as.POSIXlt(days)$mon + 1
+  rlels <- rle(months)[["lengths"]]
 
-    list(
-      groupid = rep(rep_len(group_by_month, length(rlels)), times = rlels),
-      ids_adj_yrs = if (first_month_of_year > 1) {
-        months >= first_month_of_year
-      }
-    )
-  }
-)
+  list(
+    groupid = rep(rep_len(group_by_month, length(rlels)), times = rlels),
+    ids_adj_yrs = if (first_month_of_year > 1) {
+      months >= first_month_of_year
+    }
+  )
+}
+
 
 
 
@@ -1335,6 +1339,157 @@ format_daily_to_matrix <- function(x, time, out_labels, include_year) {
 
   if (include_year) {
     res <- rbind(Year = years, res)
+  }
+
+  res
+}
+
+
+
+
+
+
+#------ SEPARATE DATA FROM CALCULATIONS DEVELOPMENT ERA ------
+determine_sw2_sim_time <- function(
+  x,
+  years,
+  sw2_tp = c("Day", "Month", "Year")
+) {
+  sw2_tp <- match.arg(sw2_tp)
+
+  x_time <- matrix(
+    NA,
+    nrow = nrow(x[[1]]),
+    ncol = 3L,
+    dimnames = list(NULL, c("Year", "Month", "Day"))
+  )
+
+  x_time[, "Year"] <- x[[1]][, "Year"]
+
+  if (sw2_tp == "Day") {
+    x_time[, "Day"] <- x[[1]][, "Day"]
+
+    tmp <- apply(
+      X = x_time[, c("Year", "Day"), drop = FALSE],
+      MARGIN = 1,
+      FUN = paste0,
+      collapse = "-"
+    )
+    x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1
+
+  } else if (sw2_tp == "Month") {
+    x_time[, "Month"] <- x[[1]][, "Month"]
+  }
+
+  x_time
+}
+
+
+collect_sw2_sim_data <- function(
+  path,
+  name_sw2_run,
+  id_scen,
+  years,
+  output_sets = list(
+    list(
+      sw2_tp = c("Day", "Month", "Year"),
+      sw2_outs = NA_character_,
+      sw2_vars = NA_character_,
+      varnames_are_fixed = TRUE
+    )
+  )
+) {
+  n_sets <- length(output_sets)
+
+  for (k in seq_len(n_sets)) {
+    out <- output_sets[[k]]
+    stopifnot(
+      length(out[["sw2_tp"]]) == 1,
+      out[["sw2_tp"]] %in% c("Day", "Month", "Year"),
+      length(out[["sw2_outs"]]) %in% c(1L, length(out[["sw2_vars"]])),
+      length(out[["varnames_are_fixed"]]) %in% c(1L, length(out[["sw2_vars"]]))
+    )
+  }
+
+
+  #--- Load rSOILWAT2 output object: `runDataSC`
+  sim_data <- new.env(parent = emptyenv())
+  load(
+    file = file.path(
+      path,
+      name_sw2_run,
+      paste0("sw_output_sc", id_scen, ".RData")
+    ),
+    envir = sim_data
+  )
+
+  #--- Extract variables
+  res <- vector(mode = "list", length = n_sets)
+  if (length(names(output_sets)) > 0) {
+    names(res) <- names(output_sets)
+  }
+
+  for (k1 in seq_len(n_sets)) {
+    out <- output_sets[[k1]]
+
+    nvars <- length(out[["sw2_vars"]])
+    sw2_outs <- rep_len(out[["sw2_outs"]], nvars)
+    fixed <- rep_len(out[["varnames_are_fixed"]], nvars)
+
+    # Extract slots
+    x <- lapply(
+      sw2_outs,
+      function(ko) slot(slot(sim_data[["runDataSC"]], ko), out[["sw2_tp"]])
+    )
+    x_vals <- list()
+
+    # Subset columns
+    for (k2 in seq_len(nvars)) {
+      if (fixed[k2]) {
+        x_vals[[k2]] <- x[[k2]][, out[["sw2_vars"]][k2], drop = fixed[k2]]
+      } else {
+        tmp <- grep(out[["sw2_vars"]][k2], colnames(x[[k2]]), value = TRUE)
+        x_vals[[k2]] <- x[[k2]][, tmp, drop = fixed[k2]]
+        colnames(x_vals[[k2]]) <- tmp
+      }
+    }
+
+    nv <- names(out[["sw2_vars"]])
+    names(x_vals) <- if (is.null(nv)) {
+      out[["sw2_vars"]]
+    } else {
+      tmp <- nv
+      ids <- nchar(nv) == 0
+      if (any(ids)) tmp[ids] <- out[["sw2_vars"]][ids]
+      tmp
+    }
+
+
+    #--- Extract time
+    has_subset_years <- !missing(years) && length(years) > 0
+
+    x_time <- determine_sw2_sim_time(
+      x,
+      years = if (has_subset_years) years else unique(x[[1]][, "Year"]),
+      sw2_tp = out[["sw2_tp"]]
+    )
+
+
+    #--- Subset to requested years
+    if (has_subset_years) {
+      ids <- x_time[, "Year"] %in% years
+      x_time <- x_time[ids, , drop = FALSE]
+      x_vals <- lapply(
+        x_vals,
+        function(x) if (is.null(dim(x))) x[ids] else x[ids, , drop = FALSE]
+      )
+    }
+
+
+    res[[k1]] <- list(
+      time = x_time,
+      values = x_vals
+    )
   }
 
   res

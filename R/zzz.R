@@ -26,5 +26,15 @@
   assign("tol", sqrt(.Machine[["double.eps"]]), envir = rSW2_glovars)
   assign("st_mo", seq_len(12L), envir = rSW2_glovars)
 
+  #--- Memoization
+  # `memoise::memoise` v2.0.0 recommends to memoize package functions
+  # when package is loaded
+  determine_sw2_sim_time <<- memoise::memoize(
+    f = determine_sw2_sim_time,
+    omit_args = "x"
+  )
+
+  groupid_by_days <<- memoise::memoize(groupid_by_days)
+
   invisible()
 }
