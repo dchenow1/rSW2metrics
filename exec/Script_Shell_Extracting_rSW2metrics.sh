@@ -39,6 +39,7 @@ Rscript Script_to_Extract_Metric.R -o=PPT_MeanMonthly -fun=metric_PPT_MeanMonthl
 Rscript Script_to_Extract_Metric.R -o=PPT_Seasonal -fun=metric_PPT_Seasonal ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=Radiation -fun=metric_Radiation ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=RecruitmentIndex_v4 -fun=metric_RecruitmentIndex_v4 ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=RecruitmentIndex_v5 -fun=metric_RecruitmentIndex_v5 ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SemiDryDuration_Annual_top50cm -fun=metric_SemiDryDuration_Annual_top50cm ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SemiDryDuration_Annual_wholeprofile -fun=metric_SemiDryDuration_Annual_wholeprofile ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=SMTRs -fun=metric_SMTRs ${mode} ${parallel} ${prjoptions}

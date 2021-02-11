@@ -30,6 +30,7 @@
 \alias{metric_PPT_Seasonal}
 \alias{metric_Radiation}
 \alias{metric_RecruitmentIndex_v4}
+\alias{metric_RecruitmentIndex_v5}
 \alias{metric_SemiDryDuration_Annual_top50cm}
 \alias{metric_SemiDryDuration_Annual_wholeprofile}
 \alias{metric_SMTRs}
@@ -142,6 +143,7 @@ They have at least the following arguments:
   \item \var{metric_PPT_Seasonal}
   \item \var{metric_Radiation}
   \item \var{metric_RecruitmentIndex_v4}
+  \item \var{metric_RecruitmentIndex_v5}
   \item \var{metric_SemiDryDuration_Annual_top50cm}
   \item \var{metric_SemiDryDuration_Annual_wholeprofile}
   \item \var{metric_SMTRs}

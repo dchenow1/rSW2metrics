@@ -332,6 +332,77 @@ metric_RecruitmentIndex_v4 <- function(
     type = "warn"
   )
 
+
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    res[[k1]] <- t(calc_RecruitmentIndex_v2(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      soils = soils,
+      hemisphere_NS = "N",
+      recruitment_depth_range_cm = recruitment_depth_range_cm,
+      Temp_limit_C = 5,
+      Wet_SWP_limit_MPa = -1.5,
+      Dry_SWP_limit_MPa = -3,
+      init_WDD = 15,
+      init_days = 3,
+      init_depth_range_cm = init_depth_range_cm,
+      stop_DDD = 15,
+      stop_days_DDD = 3,
+      stop_depth_range_cm = stop_depth_range_cm,
+      stop_TDD = 0,
+      stop_days_TDD = 3
+    ))
+  }
+
+  res
+}
+
+
+
+# max WDD across recruitment events before/after mid-summer (July 15): where
+# recruitment potential is accumulated WDD at 10-20 cm during intervals which
+# start after 3-day periods with WDD > 0 that sum to >= 15 WDD in 0-10 cm and
+# end either after 3-day periods with DDD > 0 that sum to >= 15 DDD in 0-20 cm
+# or after 3-day periods with TDD == 0
+metric_RecruitmentIndex_v5 <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "ts_years",
+  soils, ...
+) {
+  stopifnot(check_metric_arguments(
+    out = match.arg(out),
+    req_soil_vars = "depth_cm"
+  ))
+
+  init_depth_range_cm <- c(0, 10)
+  recruitment_depth_range_cm <- c(10, 20)
+  stop_depth_range_cm <- c(0, 20)
+
+  # Check soil depths
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = init_depth_range_cm,
+    strict = TRUE,
+    type = "warn"
+  )
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = recruitment_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+  check_soillayer_availability(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = stop_depth_range_cm,
+    strict = c(TRUE, FALSE),
+    type = "warn"
+  )
+
+
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
