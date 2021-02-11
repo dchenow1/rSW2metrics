@@ -78,7 +78,7 @@ get_SWA_JJA <- function(
       )
     )
 
-    swa_daily <- calc_SWA(
+    swa_daily <- calc_SWA_mm(
       sim_vwc_daily = sim_data[["vwc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
@@ -465,7 +465,7 @@ get_SWA_daily <- function(
       )
     )
 
-    swa_daily <- calc_SWA(
+    swa_daily <- calc_SWA_mm(
       sim_vwc_daily = sim_data[["vwc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
@@ -473,7 +473,7 @@ get_SWA_daily <- function(
     )
 
     res[[k1]] <- format_daily_to_matrix(
-      x = 10 * swa_daily[["values"]][[1]],
+      x = swa_daily[["values"]][[1]],
       time = swa_daily[["time"]],
       out_labels = out_label,
       include_year = include_year

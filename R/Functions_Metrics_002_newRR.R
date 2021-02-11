@@ -537,7 +537,7 @@ metric_DDDat5C0to100cm30bar <- function(
 
 #--- SWA = Soil water availability [mm] (SWA above -3.0 and -3.9 MPa):
 # calculate monthly means
-calc_SWA <- function(
+calc_SWA_mm <- function(
   sim_vwc_daily,
   soils,
   used_depth_range_cm = NULL,
@@ -632,7 +632,7 @@ get_SWA <- function(
       )
     )
 
-    swa_daily <- calc_SWA(
+    swa_daily <- calc_SWA_mm(
       sim_vwc_daily = sim_data[["vwc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
