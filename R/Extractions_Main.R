@@ -225,7 +225,12 @@ check_project_parameters <- function(x, args) {
     )
   }
 
-  stopifnot(dir.exists(x[["dir_sw2_output"]]))
+  if (!dir.exists(x[["dir_sw2_output"]])) {
+    stop(
+      "Cannot locate simulation output at ",
+      shQuote(normalizePath(x[["dir_sw2_output"]], mustWork = FALSE))
+    )
+  }
 
   if (args[["add_aggs_across_yrs"]] && args[["is_out_ts"]]) {
     stopifnot(
@@ -277,6 +282,16 @@ extract_metrics <- function(args) {
   has_prepared_soils <-
     is_soils_input &&
     all(file.exists(fname_prepared_soildata))
+
+  if (is_soils_input && !has_prepared_soils) {
+    if (!prjpars[["has_rSOILWAT2_inputs"]]) {
+      stop(
+        shQuote(args[["fun_name"]]), " requires soils as input; ",
+        "however, neither pre-extracted soil data nor simulation inputs ",
+        "are available."
+      )
+    }
+  }
 
   do_collect_inputs <- is_fun_collecting_inputs(args[["fun_name"]])
 
