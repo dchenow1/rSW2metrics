@@ -108,3 +108,27 @@ collect_input_soillayers_clay <- function(
     sw2_soil_var = "clay_frac"
   )
 }
+
+
+collect_input_soillayers_count <- function(
+  path,
+  name_sw2_run,
+  id_scen = 1L,
+  ...
+) {
+  sim_data <- collect_sw2_sim_data(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    id_scen = id_scen,
+    output_sets = list(
+      yr = list(
+        sw2_tp = "Year",
+        sw2_outs = "SWPMATRIC",
+        sw2_vars = c(swp = "Lyr"),
+        varnames_are_fixed = FALSE
+      )
+    )
+  )
+
+  ncol(sim_data[["yr"]][["values"]][["swp"]])
+}

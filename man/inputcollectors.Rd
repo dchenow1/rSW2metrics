@@ -3,6 +3,7 @@
 \name{inputcollectors}
 \alias{inputcollectors}
 \alias{collect_input_soillayers_clay}
+\alias{collect_input_soillayers_count}
 \alias{collect_input_soillayers_depth}
 \alias{collect_input_soillayers_gravel}
 \alias{collect_input_soillayers_sand}
@@ -36,6 +37,7 @@ They have at least the following arguments:
 \section{List of currently available input collectors:}{
  \itemize{
    \item \var{collect_input_soillayers_clay}
+  \item \var{collect_input_soillayers_count}
   \item \var{collect_input_soillayers_depth}
   \item \var{collect_input_soillayers_gravel}
   \item \var{collect_input_soillayers_sand} 

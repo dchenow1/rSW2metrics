@@ -6,6 +6,7 @@ parallel="-ncores=2 -cllog=FALSE"
 
 
 Rscript Script_to_Extract_Metric.R -o=input_soillayers_depth -fun=collect_input_soillayers_depth ${mode} ${parallel} ${prjoptions}
+Rscript Script_to_Extract_Metric.R -o=input_soillayers_N -fun=collect_input_soillayers_count ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=input_soillayers_sand -fun=collect_input_soillayers_sand ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=input_soillayers_clay -fun=collect_input_soillayers_clay ${mode} ${parallel} ${prjoptions}
 Rscript Script_to_Extract_Metric.R -o=input_soillayers_gravel -fun=collect_input_soillayers_gravel ${mode} ${parallel} ${prjoptions}
