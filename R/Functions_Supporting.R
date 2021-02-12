@@ -23,6 +23,9 @@ check_all_output_available_of_run <- function(
 #'   The lower depth limits of soil layers in \var{[cm]}.
 #' @param used_depth_range_cm A numeric vector of length two.
 #'   The upper and lower depth limit of the zone (depth range) to consider.
+#' @param n_slyrs_has An integer value. The number of simulated soil layers
+#'   (optional). The code throws an error if there are fewer soil layers
+#'   than selected by \code{used_depth_range_cm} from \code{soil_depths_cm}.
 #'
 #' @return A numeric vector of the same length as \code{soil_depths_cm}.
 #'   The values correspond to soil layer widths that fall within the
@@ -32,17 +35,41 @@ check_all_output_available_of_run <- function(
 #' calc_soillayer_weights(c(5, 10, 30, 50), NULL)
 #' calc_soillayer_weights(c(5, 10, 30, 50), c(0, 100))
 #' calc_soillayer_weights(c(5, 10, 30, 50), c(0, 40))
-#' calc_soillayer_weights(c(5, 10, 30, 50), c(0, 40))
+#' calc_soillayer_weights(c(5, 10, 30, 50), c(20, 40))
 #' calc_soillayer_weights(c(5, 10, 30, 50), c(20, 50))
+#' calc_soillayer_weights(c(5, 10, 30, 50), c(20, 30), 3)
+#' \dontrun{
+#' calc_soillayer_weights(c(5, 10, 30, 50), c(20, 50), 3)
+#' }
 #'
 #' @export
-calc_soillayer_weights <- function(soil_depths_cm, used_depth_range_cm = NULL) {
+calc_soillayer_weights <- function(
+  soil_depths_cm,
+  used_depth_range_cm = NULL,
+  n_slyrs_has = NULL
+) {
+  # if used_depth_range_cm is NULL, then ids is `logical(0)`
   ids <-
     soil_depths_cm <= used_depth_range_cm[1] |
     soil_depths_cm > used_depth_range_cm[2]
 
   x <- diff(c(0, soil_depths_cm))
   x[ids] <- NA
+
+  if (!is.null(n_slyrs_has)) {
+    if (isTRUE((tmp <- max(which(!is.na(x)))) > n_slyrs_has)) {
+      stop(
+        "Deeper soil layers requested than actually simulated:",
+        "\n  * position of deepest requested soil layers = ", tmp,
+        "\n  * simulated number of soil layers = ", n_slyrs_has
+      )
+    }
+
+    # Make sure that returned object is not longer than `n_slyrs_has`
+    if (n_slyrs_has < length(x)) {
+      x <- x[seq_len(n_slyrs_has)]
+    }
+  }
 
   x
 }
@@ -107,6 +134,60 @@ check_soillayer_availability <- function(
 
   invisible(length(msg) == 0)
 }
+
+
+#' Determine positions of soil layers within a zone
+#'
+#' @inheritParams calc_soillayer_weights
+#'
+#' @return An integer vector.
+#'
+#' @examples
+#' determine_used_soillayers(c(5, 10, 30, 50))
+#' determine_used_soillayers(c(5, 10, 30, 50), c(0, 100))
+#' determine_used_soillayers(c(5, 10, 30, 50), c(0, 40))
+#' determine_used_soillayers(c(5, 10, 30, 50), c(20, 40))
+#' determine_used_soillayers(c(5, 10, 30, 50), c(20, 50))
+#' determine_used_soillayers(c(5, 10, 30, 50), c(20, 30), 3)
+#' \dontrun{
+#' determine_used_soillayers(c(5, 10, 30, 50), c(20, 50), 3)
+#' }
+#'
+#' @export
+determine_used_soillayers <- function(
+  soil_depths_cm,
+  used_depth_range_cm = NULL,
+  n_slyrs_has = NULL
+) {
+
+  soil_depths_cm <- soil_depths_cm[!is.na(soil_depths_cm)]
+
+  x <- seq_along(soil_depths_cm)
+
+  # if used_depth_range_cm is NULL, then ids is `logical(0)`
+  ids <-
+    soil_depths_cm <= used_depth_range_cm[1] |
+    soil_depths_cm > used_depth_range_cm[2]
+
+  if (any(ids)) {
+    x <- x[which(!ids)]
+  }
+
+  if (
+    !is.null(n_slyrs_has) &&
+    length(x) > 0 &&
+    isTRUE((tmp <- max(x)) > n_slyrs_has)
+  ) {
+    stop(
+      "Deeper soil layers requested than actually simulated:",
+      "\n  * position of deepest requested soil layers = ", tmp,
+      "\n  * simulated number of soil layers = ", n_slyrs_has
+    )
+  }
+
+  x
+}
+
 
 
 

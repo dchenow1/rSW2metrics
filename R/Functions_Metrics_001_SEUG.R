@@ -771,8 +771,10 @@ get_ExtremeShortTermDryStress_Seasonal <- function(
   ...
 ) {
 
-  widths_cm <- calc_soillayer_weights(soils[["depth_cm"]], used_depth_range_cm)
-  id_slyrs <- which(!is.na(widths_cm))
+  id_slyrs <- determine_used_soillayers(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm
+  )
 
   calc_multivariate_from_sw2(
     path, name_sw2_run,
@@ -868,8 +870,10 @@ get_SemiDryDuration_Annual <- function(
   ...
 ) {
 
-  widths_cm <- calc_soillayer_weights(soils[["depth_cm"]], used_depth_range_cm)
-  id_slyrs <- which(!is.na(widths_cm))
+  id_slyrs <- determine_used_soillayers(
+    soil_depths_cm = soils[["depth_cm"]],
+    used_depth_range_cm = used_depth_range_cm
+  )
 
   calc_univariate_from_sw2(
     path, name_sw2_run,

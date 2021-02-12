@@ -168,14 +168,11 @@ get_wetdry <- function(
   sm_periods = list(op = `>`, limit = -Inf)
 ) {
 
-  widths_cm <- calc_soillayer_weights(
+  id_slyrs <- determine_used_soillayers(
     soil_depths_cm = soils[["depth_cm"]],
-    used_depth_range_cm = used_depth_range_cm
+    used_depth_range_cm = used_depth_range_cm,
+    n_slyrs_has = ncol(sim_swp_daily[["values"]][["swp"]])
   )
-
-  id_slyrs <- which(!is.na(widths_cm))
-  widths_cm <- widths_cm[id_slyrs]
-
 
   # Days that meet soil moisture criterion
   sm <- do.call(
@@ -545,7 +542,8 @@ calc_SWA_mm <- function(
 ) {
   widths_cm <- calc_soillayer_weights(
     soil_depths_cm = soils[["depth_cm"]],
-    used_depth_range_cm = used_depth_range_cm
+    used_depth_range_cm = used_depth_range_cm,
+    n_slyrs_has = ncol(sim_vwc_daily[["values"]][["vwc"]])
   )
 
   id_slyrs <- which(!is.na(widths_cm))
