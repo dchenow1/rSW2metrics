@@ -28,6 +28,8 @@ if (do_full) {
 dir_sw2_output <- file.path(dir_rSFSW2, "3_Runs")
 has_rSOILWAT2_inputs <- TRUE
 
+make_short_run_names <- rSW2metrics::shorten_run_names
+
 N_exp <- 1
 N_scen <- 7
 id_scen_used <- c(1, 5:7)

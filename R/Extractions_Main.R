@@ -190,6 +190,7 @@ check_extraction_arguments <- function(x) {
 required_project_parameters <- function() {
   c(
     "dir_sw2_output", "dir_out", "has_rSOILWAT2_inputs",
+    "make_short_run_names",
     "N_exp", "N_scen", "id_scen_used",
     "years_timeseries_by_scen", "years_aggs_by_scen",
     "season_by_month", "first_month_of_year",
@@ -208,6 +209,15 @@ check_project_parameters <- function(x, args) {
     )
 
     x[["has_rSOILWAT2_inputs"]] <- TRUE
+  }
+
+  if (!exists("make_short_run_names", where = x)) {
+    warning(
+      "Project parameter 'make_short_run_names' is missing; ",
+      "using default value 'rSW2metrics::shorten_run_names()'."
+    )
+
+    x[["make_short_run_names"]] <- rSW2metrics::shorten_run_names
   }
 
 
@@ -325,22 +335,13 @@ extract_metrics <- function(args) {
   # if prjpars[["N_exp"]] == 1, then runs = sites
   # Each (rSFSW2) "run" contains one (SOILWAT2) run for each climate scenario
 
-  # this code is not ready for projects with more than one experiment
-  stopifnot(prjpars[["N_exp"]] == 1)
-
   dir_runs_rSFSW2 <- list.files(prjpars[["dir_sw2_output"]], full.names = TRUE)
   stopifnot(length(dir_runs_rSFSW2) > 0)
   run_rSFSW2_names <- basename(dir_runs_rSFSW2)
 
-  # Remove experiment identifier from run label
-  tmp <- strsplit(run_rSFSW2_names, split = "_", fixed = TRUE)
-  site_names <- unique(
-    sapply(tmp, function(x) paste(x[- (1:2)], collapse = "_"))
-  )
-
   # (Shortened) run identifier
   tag_run_rSFSW2_names <- if (prjpars[["N_exp"]] == 1) {
-    site_names
+    prjpars[["make_short_run_names"]](run_rSFSW2_names)
   } else {
     run_rSFSW2_names
   }
@@ -507,7 +508,7 @@ extract_metrics <- function(args) {
         fun = args[["fun_name"]],
         fun_args = fun_args,
         name_sw2_run = run_rSFSW2_names[s], # nolint
-        site_name = site_names[s], # nolint
+        name_sw2_run_soils = tag_run_rSFSW2_names[s], # nolint
         is_soils_input = is_soils_input,
         soils = if (exists("soils")) soils,
         soil_variables = soil_variables
@@ -587,16 +588,18 @@ process_values_one_site <- function(
   fun,
   fun_args,
   name_sw2_run,
+  name_sw2_run_soils = NULL,
   is_soils_input = FALSE,
-  site_name = NULL,
   soils = NULL,
   soil_variables = NULL
 ) {
   # Add run-specific arguments
   if (is_soils_input) {
-    if (!missing(soils) && !is.null(soils) && !is.null(site_name)) {
+    if (!missing(soils) && !is.null(soils) && !is.null(name_sw2_run_soils)) {
       icrm <- 1:2
-      issoil <- grep(site_name, soils[["depth_cm"]][, "site"])[1]
+      issoil <- match(name_sw2_run_soils, soils[["depth_cm"]][, "site"])
+
+      stopifnot(is.finite(issoil))
 
       used_args <- c(
         fun_args,

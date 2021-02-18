@@ -12,8 +12,40 @@ check_all_output_available_of_run <- function(
   isTRUE(
     fnum == N_scen + if (check_input) 1 else 0 &&
     all(fsizes > 0)
+
+
+#' Shorten full names of \pkg{rSFSW2} simulation runs
+#'
+#' Full names of \pkg{rSFSW2} simulation runs are composed of three parts
+#' \itemize{
+#'   \item a run number
+#'   \item experimental treatment
+#'   \item site label
+#' }
+#' and concatenated by \var{"_"} as separator, for instance,
+#' \var{"001_Default_SiteA"}, \var{"002_Default_SiteB"}, etc.
+#'
+#' It may be desirable to shorten the full names in cases where only none/one
+#' experimental treatment was used, for instance,
+#' \var{SiteA"}, \var{"SiteB"}, etc.
+#'
+#' @param run_names A vector of character strings.
+#' @param element_sep A character value. The separating character.
+#' @param N_discard An integer value. The number of elements separated by
+#'   \code{element_sep} to discard.
+#'
+#' @examples
+#' shorten_run_names(c("001_Default_SiteA", "002_Default_SiteB"))
+#'
+#' @export
+shorten_run_names <- function(run_names, element_sep = "_", N_discard = 2) {
+  discard <- seq_len(N_discard)
+  sapply(
+    strsplit(run_names, split = element_sep, fixed = TRUE),
+    function(x) paste(x[- discard], collapse = element_sep)
   )
 }
+
 
 #--- Obtain input values -------------------------------------------------------
 
