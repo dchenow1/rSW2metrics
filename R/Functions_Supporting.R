@@ -9,9 +9,11 @@ check_all_output_available_of_run <- function(
   fsizes <- sapply(files, function(f) file.size(f), USE.NAMES = FALSE)
 
   # Expect: One output file per scenario plus one file for inputs
-  isTRUE(
-    fnum == N_scen + if (check_input) 1 else 0 &&
+  isTRUE(all(
+    fnum == N_scen + if (check_input) 1 else 0,
     all(fsizes > 0)
+  ))
+}
 
 
 #' Shorten full names of \pkg{rSFSW2} simulation runs
