@@ -8,8 +8,8 @@ process_values_one_site(
   fun,
   fun_args,
   name_sw2_run,
+  name_sw2_run_soils = NULL,
   is_soils_input = FALSE,
-  site_name = NULL,
   soils = NULL,
   soil_variables = NULL
 )
