@@ -422,9 +422,13 @@ extract_metrics <- function(args) {
       names(soils) <- names(soil_variables)
 
       if (length(soils) > 1) {
-        # Check that all soil variables are sorted correctly
         for (k in seq_along(soils)[-1]) {
-          stopifnot(identical(soils[[1]][, "site"], soils[[k]][, "site"]))
+          stopifnot(
+            # Check that all soil variables are sorted correctly
+            identical(soils[[1]][, "site"], soils[[k]][, "site"]),
+            # Check that simulation runs can be matched up with soils data
+            all(tag_run_rSFSW2_names %in% soils[[1]][, "site"])
+          )
         }
       }
 
