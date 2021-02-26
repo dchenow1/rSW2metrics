@@ -2,19 +2,87 @@
 % Please edit documentation in R/Functions_AcrossYears.R
 \name{aggs_across_years}
 \alias{aggs_across_years}
-\alias{mean_cv}
-\alias{mean_cv_trend}
-\title{Calculate aggregate statistics of values across years}
+\title{Calculate temporal aggregations across annual values}
 \usage{
-mean_cv(x, na.rm = TRUE)
-
-mean_cv_trend(x, na.rm = TRUE)
+aggs_across_years(x, fun, list_years, id_scens = NULL, combine = TRUE)
 }
 \arguments{
-\item{x}{A numeric vector.}
+\item{x}{A two-dimensional object where rows represent units/cases and
+(at least some of the) columns represent
+annual (numerical) values (with column names as \code{scX_YYYY}
+where \var{X} is the scenario identifier 1, 2, ... and
+\var{YYYY} is a calendar year).}
 
-\item{na.rm}{A logical value}
+\item{fun}{A function that has \var{x} as argument, can accept
+\var{na.rm} as additional argument, e.g., via \var{...} (see examples),
+and returns a named vector.}
+
+\item{list_years}{A list with integer vectors. Each element represents a
+continuous sequence of years over which aggregations are to be calculated.}
+
+\item{id_scens}{An integer vector of scenario identifiers or \code{NULL};
+see details.}
+
+\item{combine}{A logical value. If \code{TRUE}, then the data columns
+\code{scX_YYYY} are appended to the returned object.}
 }
 \description{
-Calculate aggregate statistics of values across years
+Calculate temporal aggregations across annual values
+}
+\section{Details}{
+
+Arguments \code{list_years} and \code{id_scens} specify two modes of
+aggregations: \itemize{
+  \item Both arguments, i.e., \code{list_years} and \code{id_scens},
+    are specified. There must be one element in \code{list_years} for each
+    value of \code{id_scens}.
+  \item Only \code{list_years} is provided as argument. Each element of
+    \code{list_years} is applied to each scenario available in \code{x}.
+}
+}
+
+\section{Notes}{
+
+Years requested by \code{list_years} but not available in \code{x} are
+silently ignored!
+}
+
+\examples{
+x <- data.frame(
+  site = paste0("Site_", 1:3),
+  matrix(
+    sample(3 * 2 * 6),
+    nrow = 3,
+    dimnames = list(NULL, paste0("sc", rep(1:2, each = 6), "_", 2001:2006))
+  )
+)
+
+# Temporal summary for two time periods for each available scenario
+# Note that requested years 2007 to 2010 are silently ignored
+rSW2metrics::aggs_across_years(
+  x,
+  fun = rSW2metrics::mean_cv,
+  list_years = list(2001:2006, 2005, 2004:2010),
+  combine = FALSE
+)
+
+# Temporal summary for one time period per requested scenario
+# Note that some requested years and some scenarios are not available
+rSW2metrics::aggs_across_years(
+  x,
+  fun = rSW2metrics::mean_cv,
+  list_years = list(2001:2006, 2004:2006, 1990:2010),
+  id_scens = 1:3,
+  combine = FALSE
+)
+
+# Count years used in temporal summaries
+rSW2metrics::aggs_across_years(
+  x,
+  fun = function(x, ...) c(N = length(x)),
+  list_years = list(2001:2006, 2004:2006, 1990:2010),
+  id_scens = 1:3,
+  combine = FALSE
+)
+
 }

@@ -535,11 +535,12 @@ extract_metrics <- function(args) {
 
   #------ Add aggregations across years (if requested and we have yearly values)
   if (args[["add_aggs_across_yrs"]] && args[["is_out_ts"]]) {
-    values_all_sites <- add_aggs_across_years(
+    values_all_sites <- aggs_across_years(
       values_all_sites,
       fun = prjpars[["fun_aggs_across_yrs"]],
-      id_scen_used = prjpars[["id_scen_used"]],
-      list_years_scen_used = prjpars[["years_timeseries_by_scen"]]
+      list_years = prjpars[["years_timeseries_by_scen"]],
+      id_scens = prjpars[["id_scen_used"]],
+      combine = TRUE
     )
   }
 

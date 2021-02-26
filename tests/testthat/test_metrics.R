@@ -206,11 +206,12 @@ test_that("Check metrics", {
     expect_false(anyNA(colnames(values_all_sites)))
 
     output <- if (is_out_ts) {
-      add_aggs_across_years(
+      aggs_across_years(
         values_all_sites,
         fun = prjpars[["fun_aggs_across_yrs"]],
-        id_scen_used = prjpars[["id_scen_used"]],
-        list_years_scen_used = prjpars[["years_timeseries_by_scen"]]
+        list_years = prjpars[["years_timeseries_by_scen"]],
+        id_scens = prjpars[["id_scen_used"]],
+        combine = TRUE
       )
     } else {
       values_all_sites
