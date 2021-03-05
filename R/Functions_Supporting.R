@@ -1090,35 +1090,52 @@ calc_transp_seasonality <- function(x, time, probs) {
 
 #--- DOY of two maxima of a smoothed transpiration
 
+#' @examples
+#' ## No or less than two plateaus -> central candidate from among all values
+#' central_candidate(1)
+#' central_candidate(1:4)
+#' central_candidate(c(1, 20:29))
+#'
+#' ## More than one plateau -> central candidate from longest plateau
+#' central_candidate(c(1, 20:30, 40:60))
+#' central_candidate(c(1, 20:30, 40:60, 70:80, 100:110))
+#' central_candidate(c(1, 20:30, 40:60, 70:90))
+#'
+#' @noRd
 central_candidate <- function(ids) {
+  # TODO: consider re-writing in cpp11 or Rcpp
+
   if (length(ids) > 1) {
     # plateaus or individual peaks?
-    tmp <- diff(ids) == 1
+    tmp <- ids[-1] - ids[-length(ids)] == 1 # faster than `diff(ids) == 1`
 
     if (any(tmp)) {
       # We have plateaus: now, count number of plateaus
       tmpp <- rle(c(tmp, FALSE))
+      tmpps <- which(tmpp[["values"]])
 
-      if (sum(tmpp[["values"]]) > 1) {
+      if (length(tmpps) > 1) {
         # We have multiple plateaus: now, identify longest plateau(s)
-        tmpm <- max(tmpp[["lengths"]][tmpp[["values"]]])
-        tmpl <- which(tmpp[["lengths"]][tmpp[["values"]]] == tmpm)
+        tmppl <- tmpp[["lengths"]][tmpps]
+        tmpi <- which(tmppl == max(tmppl))
 
-        if (length(tmpl) > 1) {
+        tmppsi <- if (length(tmpi) > 1) {
           # We have multiple longest plateaus:
           # now, select nearest even middle one among longest plateaus
-          tmps <- tmpl[round(0.5 + length(tmpl) / 2)]
+          tmpps[tmpi[round(0.5 + length(tmpi) / 2)]]
         } else {
-          tmps <- tmpl
+          tmpps[tmpi]
         }
 
-        tmpp[["values"]][- which(tmpp[["values"]])[tmps]] <- FALSE
-        ids <- ids[inverse.rle(tmpp)]
+        # Extract start:end of identified longest plateau
+        tmpcs <- cumsum(c(1, tmpp[["lengths"]]))
+        ids <- ids[tmpcs[tmppsi]:tmpcs[tmppsi + 1]]
       }
     }
 
     # take central value (from among all peaks or from selected plateau)
-    ids[quantile(seq_along(ids), probs = 0.5, type = 1)]
+    # here, the 50%-quantile of the positions under type 1
+    ids[(length(ids) - 1) %/% 2 + 1]
 
   } else {
     ids
