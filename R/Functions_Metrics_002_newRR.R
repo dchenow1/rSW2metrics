@@ -997,6 +997,7 @@ get_SW2flux <- function(
 
 #--- Annual and monthly fluxes:
 #' Evapotranspiration (ET) [mm]
+#' @noRd
 metric_ET <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
@@ -1017,6 +1018,7 @@ metric_ET <- function(
 }
 
 #' Diffuse Recharge (DR) = Deep Drainage [mm]
+#' @noRd
 metric_DR <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
@@ -1038,6 +1040,7 @@ metric_DR <- function(
 
 
 #' Radiation (H) [MJ/m2]
+#' @noRd
 metric_Radiation <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",

@@ -210,6 +210,7 @@ aggs_across_years <- function(
 
 
 #' Coefficient of variation
+#' @noRd
 cv <- function(x, ...) {
   tmp <- mean(x)
   if (isTRUE(abs(tmp) > sqrt(.Machine$double.eps))) {
@@ -220,6 +221,7 @@ cv <- function(x, ...) {
 }
 
 #' Sen Slope of Mann-Kendall Trend Test
+#' @noRd
 sen_slope <- function(x, ...) {
   stopifnot(requireNamespace("modifiedmk", quietly = TRUE))
   if (sum(is.finite(x)) > 3) {

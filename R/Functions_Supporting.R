@@ -354,6 +354,7 @@ get_values_from_sw2 <- function(id_scen, path, name_sw2_run,
 #'   Each matrix contains the output for one \code{id_scen_used};
 #'   rows represent the aggregation groups \code{group_by_month}, and
 #'   columns represent time, e.g., calendar years.
+#' @noRd
 calc_univariate_from_sw2 <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used, group_by_month, first_month_of_year,
@@ -488,6 +489,7 @@ calc_univariate_from_sw2 <- function(
 }
 
 
+#' @noRd
 calc_multivariate_from_sw2 <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used, group_by_month, first_month_of_year,

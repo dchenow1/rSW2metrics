@@ -589,6 +589,7 @@ extract_metrics <- function(args) {
 
 
 #' Extract the requested metrics from one simulation
+#' @noRd
 process_values_one_site <- function(
   fun,
   fun_args,
@@ -657,6 +658,7 @@ process_values_one_site <- function(
 
 
 #' Transform result into wide format suitable for spreadsheet concatenation
+#' @noRd
 format_metric_1sim <- function(x, id) {
   if (is.list(x)) {
     # List with one element per climate scenario
@@ -697,7 +699,8 @@ format_metric_1sim <- function(x, id) {
 }
 
 
-# Format concatenated spreadsheet with identifiers and column names
+#' Format concatenated spreadsheet with identifiers and column names
+#' @noRd
 format_metric_Nsim <- function(
   x, names, prjpars,
   do_collect_inputs = FALSE,
