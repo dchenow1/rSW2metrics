@@ -1102,7 +1102,7 @@ calc_transp_seasonality <- function(x, time, probs) {
 #' central_candidate(c(1, 20:30, 40:60, 70:90))
 #'
 #' @noRd
-central_candidate <- function(ids) {
+central_candidate_r <- function(ids) {
   # TODO: consider re-writing in cpp11 or Rcpp
 
   if (length(ids) > 1) {
@@ -1141,6 +1141,12 @@ central_candidate <- function(ids) {
     ids
   }
 }
+
+central_candidate_2r <- function(ids) {
+  central_candidate_c(as.integer(ids))
+}
+
+central_candidate <- function(...) central_candidate_2r(...)
 
 identify_simple_peaks <- function(
   x,
