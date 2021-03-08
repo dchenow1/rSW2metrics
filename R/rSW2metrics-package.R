@@ -173,6 +173,9 @@ rd_section_listing_inputcollectors <- function() {
 NULL
 
 
+##------ Load compiled package code
+#' @useDynLib rSW2metrics, .registration = TRUE
+
 
 ##------ Import from other packages
 #' @import methods
