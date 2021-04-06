@@ -61,11 +61,13 @@
 \alias{metric_Tmean_daily}
 \alias{metric_Tmean_JJA}
 \alias{metric_Transpiration_Seasonal}
+\alias{metric_TranspirationPeaks_v6}
 \alias{metric_TranspirationSeasonality_v1}
 \alias{metric_TranspirationSeasonality_v2}
 \alias{metric_TranspirationSeasonality_v3}
 \alias{metric_TranspirationSeasonality_v4}
 \alias{metric_TranspirationSeasonality_v5}
+\alias{metric_TranspirationSeasonality_v6}
 \alias{metric_VWC_Seasonal_top50cm}
 \alias{metric_VWC_Seasonal_wholeprofile}
 \alias{metric_WDDat5C0to100cm15bar}
@@ -174,11 +176,13 @@ They have at least the following arguments:
   \item \var{metric_Tmean_daily}
   \item \var{metric_Tmean_JJA}
   \item \var{metric_Transpiration_Seasonal}
+  \item \var{metric_TranspirationPeaks_v6}
   \item \var{metric_TranspirationSeasonality_v1}
   \item \var{metric_TranspirationSeasonality_v2}
   \item \var{metric_TranspirationSeasonality_v3}
   \item \var{metric_TranspirationSeasonality_v4}
   \item \var{metric_TranspirationSeasonality_v5}
+  \item \var{metric_TranspirationSeasonality_v6}
   \item \var{metric_VWC_Seasonal_top50cm}
   \item \var{metric_VWC_Seasonal_wholeprofile}
   \item \var{metric_WDDat5C0to100cm15bar}
