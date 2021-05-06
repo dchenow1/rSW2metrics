@@ -422,12 +422,10 @@ extract_metrics <- function(args) {
       names(soils) <- names(soil_variables)
 
       if (length(soils) > 1) {
-        for (k in seq_along(soils)[-1]) {
+        for (k in seq_along(soils)) {
           stopifnot(
-            # Check that all soil variables are sorted correctly
-            identical(soils[[1]][, "site"], soils[[k]][, "site"]),
-            # Check that simulation runs can be matched up with soils data
-            all(tag_run_rSFSW2_names %in% soils[[1]][, "site"])
+            # Check that we have soils for every simulation runs
+            all(tag_run_rSFSW2_names %in% soils[[k]][, "site"])
           )
         }
       }
@@ -603,19 +601,36 @@ process_values_one_site <- function(
   if (is_soils_input) {
     if (!missing(soils) && !is.null(soils) && !is.null(name_sw2_run_soils)) {
       icrm <- 1:2
-      issoil <- match(name_sw2_run_soils, soils[["depth_cm"]][, "site"])
 
-      stopifnot(is.finite(issoil))
+      # Check that we got good soil variable names
+      names_soil_variables <- names(soil_variables)
 
+      stopifnot(
+        names_soil_variables %in% names(soils),
+        names_soil_variables %in% names(list_soil_variables())
+      )
+
+      # Locate site
+      idss <- lapply(
+        names_soil_variables,
+        function(k) match(name_sw2_run_soils, soils[[k]][, "site"])
+      )
+      names(idss) <- names_soil_variables
+
+      stopifnot(sapply(idss, is.finite), sapply(idss, length) == 1)
+
+      # Prepare soil variable values
+      used_soil <- lapply(
+        names_soil_variables,
+        function(k) unlist(soils[[k]][idss[[k]], -icrm])
+      )
+      names(used_soil) <- names_soil_variables
+
+      # Put together arguments for extraction
       used_args <- c(
         fun_args,
         name_sw2_run = name_sw2_run,
-        soils = list(list(
-          depth_cm = unlist(soils[["depth_cm"]][issoil, -icrm]),
-          sand_frac = unlist(soils[["sand_frac"]][issoil, -icrm]),
-          clay_frac = unlist(soils[["clay_frac"]][issoil, -icrm]),
-          gravel_content = unlist(soils[["gravel_content"]][issoil, -icrm])
-        ))
+        soils = list(used_soil)
       )
 
     } else {
