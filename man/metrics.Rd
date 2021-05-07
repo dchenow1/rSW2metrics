@@ -2,6 +2,7 @@
 % Please edit documentation in R/rSW2metrics-package.R
 \name{metrics}
 \alias{metrics}
+\alias{metric_AI}
 \alias{metric_Climate_Annual}
 \alias{metric_CorTempPPT}
 \alias{metric_CorTP_Annual}
@@ -117,7 +118,8 @@ They have at least the following arguments:
 }
 \section{List of currently available metrics:}{
  \itemize{
-   \item \var{metric_Climate_Annual}
+   \item \var{metric_AI}
+  \item \var{metric_Climate_Annual}
   \item \var{metric_CorTempPPT}
   \item \var{metric_CorTP_Annual}
   \item \var{metric_CWD}
