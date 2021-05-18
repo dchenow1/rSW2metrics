@@ -4,11 +4,14 @@
 \alias{metrics}
 \alias{metric_AI}
 \alias{metric_Climate_Annual}
+\alias{metric_Climate_quarterly}
 \alias{metric_CorTempPPT}
 \alias{metric_CorTP_Annual}
 \alias{metric_CWD}
+\alias{metric_DDDat5C0to020cm30bar_quarterly}
 \alias{metric_DDDat5C0to030cm30bar}
 \alias{metric_DDDat5C0to100cm30bar}
+\alias{metric_DDDat5C0to100cm30bar_quarterly}
 \alias{metric_DR}
 \alias{metric_DR_daily}
 \alias{metric_DR_JJA}
@@ -39,6 +42,7 @@
 \alias{metric_SWA_Seasonal_wholeprofile}
 \alias{metric_SWAat0to020cm39bar_daily}
 \alias{metric_SWAat0to020cm39bar_JJA}
+\alias{metric_SWAat0to020to100cm39bar_quarterly}
 \alias{metric_SWAat0to100cm30bar}
 \alias{metric_SWAat0to100cm39bar}
 \alias{metric_SWAat0to100cm39bar_daily}
@@ -55,6 +59,7 @@
 \alias{metric_SWAat80to100cm39bar_JJA}
 \alias{metric_SWP_SoilLayers_MeanMonthly}
 \alias{metric_TDDat5C}
+\alias{metric_TDDat5C_quarterly}
 \alias{metric_TemperatureMax_Seasonal}
 \alias{metric_TemperatureMean_MeanMonthly}
 \alias{metric_TemperatureMean_Seasonal}
@@ -71,7 +76,9 @@
 \alias{metric_TranspirationSeasonality_v6}
 \alias{metric_VWC_Seasonal_top50cm}
 \alias{metric_VWC_Seasonal_wholeprofile}
+\alias{metric_WDDat5C0to020cm15bar_quarterly}
 \alias{metric_WDDat5C0to100cm15bar}
+\alias{metric_WDDat5C0to100cm15bar_quarterly}
 \alias{metric_WetSoilDays_Seasonal_top50cm}
 \alias{metric_WetSoilDays_Seasonal_wholeprofile}
 \title{End-user functions that return a specific \code{metric}}
@@ -120,11 +127,14 @@ They have at least the following arguments:
  \itemize{
    \item \var{metric_AI}
   \item \var{metric_Climate_Annual}
+  \item \var{metric_Climate_quarterly}
   \item \var{metric_CorTempPPT}
   \item \var{metric_CorTP_Annual}
   \item \var{metric_CWD}
+  \item \var{metric_DDDat5C0to020cm30bar_quarterly}
   \item \var{metric_DDDat5C0to030cm30bar}
   \item \var{metric_DDDat5C0to100cm30bar}
+  \item \var{metric_DDDat5C0to100cm30bar_quarterly}
   \item \var{metric_DR}
   \item \var{metric_DR_daily}
   \item \var{metric_DR_JJA}
@@ -155,6 +165,7 @@ They have at least the following arguments:
   \item \var{metric_SWA_Seasonal_wholeprofile}
   \item \var{metric_SWAat0to020cm39bar_daily}
   \item \var{metric_SWAat0to020cm39bar_JJA}
+  \item \var{metric_SWAat0to020to100cm39bar_quarterly}
   \item \var{metric_SWAat0to100cm30bar}
   \item \var{metric_SWAat0to100cm39bar}
   \item \var{metric_SWAat0to100cm39bar_daily}
@@ -171,6 +182,7 @@ They have at least the following arguments:
   \item \var{metric_SWAat80to100cm39bar_JJA}
   \item \var{metric_SWP_SoilLayers_MeanMonthly}
   \item \var{metric_TDDat5C}
+  \item \var{metric_TDDat5C_quarterly}
   \item \var{metric_TemperatureMax_Seasonal}
   \item \var{metric_TemperatureMean_MeanMonthly}
   \item \var{metric_TemperatureMean_Seasonal}
@@ -187,7 +199,9 @@ They have at least the following arguments:
   \item \var{metric_TranspirationSeasonality_v6}
   \item \var{metric_VWC_Seasonal_top50cm}
   \item \var{metric_VWC_Seasonal_wholeprofile}
+  \item \var{metric_WDDat5C0to020cm15bar_quarterly}
   \item \var{metric_WDDat5C0to100cm15bar}
+  \item \var{metric_WDDat5C0to100cm15bar_quarterly}
   \item \var{metric_WetSoilDays_Seasonal_top50cm}
   \item \var{metric_WetSoilDays_Seasonal_wholeprofile} 
 }}
