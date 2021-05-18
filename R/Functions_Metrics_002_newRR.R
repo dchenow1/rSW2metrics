@@ -161,31 +161,50 @@ metric_CWD <- function(
 
 # wet based on any(SWC[i] > SWC_limit)
 # dry based on all(SWC[i] < SWC_limit)
-get_wetdry <- function(
+calc_wetdry <- function(
   sim_swp_daily,
   soils,
   used_depth_range_cm = NULL,
   sm_periods = list(op = `>`, limit = -Inf)
 ) {
 
-  id_slyrs <- determine_used_soillayers(
-    soil_depths_cm = soils[["depth_cm"]],
-    used_depth_range_cm = used_depth_range_cm,
-    n_slyrs_has = ncol(sim_swp_daily[["values"]][["swp"]])
-  )
+  # Check whether op is `>` or `>=`
+  is_op_lt <- do.call(sm_periods[["op"]], list(1, 0))
 
-  # Days that meet soil moisture criterion
-  sm <- do.call(
-    what = sm_periods[["op"]],
-    args = list(
-      - 1 / 10 * sim_swp_daily[["values"]][["swp"]][, id_slyrs, drop = FALSE],
-      sm_periods[["limit"]]
+  if (is.finite(sm_periods[["limit"]])) {
+    id_slyrs <- determine_used_soillayers(
+      soil_depths_cm = soils[["depth_cm"]],
+      used_depth_range_cm = used_depth_range_cm,
+      n_slyrs_has = ncol(sim_swp_daily[["values"]][["swp"]])
     )
-  )
+
+    # Days that meet soil moisture criterion
+    sm <- do.call(
+      what = sm_periods[["op"]],
+      args = list(
+        - 1 / 10 * sim_swp_daily[["values"]][["swp"]][, id_slyrs, drop = FALSE],
+        sm_periods[["limit"]]
+      )
+    )
+
+  } else {
+    # Shortcut for infinite soil moisture limits --> no need for actual data
+    tmp <- rep(TRUE, nrow(sim_swp_daily[["time"]]))
+
+    sm <- matrix(
+      data = if (is_op_lt) {
+        if (sm_periods[["limit"]] == Inf) !tmp else tmp
+      } else {
+        if (sm_periods[["limit"]] == Inf) tmp else !tmp
+      },
+      ncol = 1
+    )
+  }
+
 
   list(
     time = sim_swp_daily[["time"]],
-    values = if (do.call(sm_periods[["op"]], list(1, 0))) {
+    values = if (is_op_lt) {
       # wet: op = `>` --> wet(profile) = any(wet[i])
       list(apply(sm, 1, any))
     } else {
@@ -198,17 +217,17 @@ get_wetdry <- function(
 # v1b: Temp > limit & sm <> limit & snow == 0
 # wet based on any(SWC[i] > SWC_limit)
 # dry based on all(SWC[i] < SWC_limit)
-get_MDD <- function(
+calc_MDD_daily <- function(
   sim_data,
   soils,
   used_depth_range_cm = NULL,
   t_periods = list(op = `>`, limit = 5),
-  sm_periods = list(op = `>`, limit = Inf),
+  sm_periods = list(op = `>`, limit = -Inf),
   snow_periods = list(op = `<=`, limit = 0)
 ) {
 
   # Daily wet/dry conditions
-  sm <- get_wetdry(
+  sm <- calc_wetdry(
     sim_swp_daily = sim_data[["swp_daily"]],
     soils = soils,
     used_depth_range_cm = used_depth_range_cm,
@@ -249,14 +268,21 @@ get_MDD <- function(
 
 
 #--- TDD = Total degree days [C x day] = MDD(op = `>`, limit_MPa = -Inf)
-calc_TDD <- function(
-  path, name_sw2_run, id_scen_used,
-  list_years_scen_used,
-  soils,
-  used_depth_range_cm = NULL,
-  Temp_limit_C = 5,
-  ...
+#--- Annual sum of daily TDDat5C
+metric_TDDat5C <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "ts_years",
+  soils, ...
 ) {
+  stopifnot(check_metric_arguments(
+    out = match.arg(out),
+    req_soil_vars = "depth_cm"
+  ))
+
+  used_depth_range_cm <- NULL
+  Temp_limit_C <- 5
+  SWP_limit_MPa <- -Inf
+
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
@@ -266,12 +292,6 @@ calc_TDD <- function(
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
       output_sets = list(
-        swp_daily = list(
-          sw2_tp = "Day",
-          sw2_outs = "SWPMATRIC",
-          sw2_vars = c(swp = "Lyr"),
-          varnames_are_fixed = FALSE
-        ),
         temp_daily = list(
           sw2_tp = "Day",
           sw2_outs = "TEMP",
@@ -287,14 +307,26 @@ calc_TDD <- function(
       )
     )
 
-    tdd_daily <- get_MDD(
+    # TDD doesn't need SWP, but time is still required
+    sim_data <- c(
+      sim_data,
+      list(
+        swp_daily = list(
+          time = sim_data[["temp_daily"]][["time"]],
+          values = NULL
+        )
+      )
+    )
+
+    tdd_daily <- calc_MDD_daily(
       sim_data = sim_data,
       soils = soils,
       used_depth_range_cm = used_depth_range_cm,
       t_periods = list(op = `>`, limit = Temp_limit_C),
-      sm_periods = list(op = `>`, limit = -Inf)
+      sm_periods = list(op = `>`, limit = SWP_limit_MPa)
     )
 
+    # Aggregate daily TDD to annual values
     res[[k1]] <- t(get_new_yearly_aggregations(
       x_daily = tdd_daily,
       fun_time = sum,
@@ -310,7 +342,10 @@ calc_TDD <- function(
   res
 }
 
-metric_TDDat5C <- function(
+
+#--- WDD = Wet degree days [C x day] = MDD(op = `>`, limit_MPa = -1.5 MPa)
+#--- Annual sum of daily WDD
+metric_WDDat5C0to100cm15bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   out = "ts_years",
   soils, ...
@@ -320,27 +355,9 @@ metric_TDDat5C <- function(
     req_soil_vars = "depth_cm"
   ))
 
-  calc_TDD(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen_used = id_scen_used,
-    list_years_scen_used = list_years_scen_used,
-    soils = soils,
-    Temp_limit_C = 5,
-    ...
-  )
-}
-
-
-#--- WDD = Wet degree days [C x day] = MDD(op = `>`, limit_MPa = -1.5 MPa)
-calc_WDD <- function(
-  path, name_sw2_run, id_scen_used,
-  list_years_scen_used,
-  soils,
-  used_depth_range_cm = NULL,
-  Temp_limit_C = 5,
-  SWP_limit_MPa = -1.5, ...
-) {
+  used_depth_range_cm <- c(0, 100)
+  Temp_limit_C <- 5
+  SWP_limit_MPa <- -1.5
 
   res <- list()
 
@@ -378,7 +395,7 @@ calc_WDD <- function(
       )
     )
 
-    wdd_daily <- get_MDD(
+    wdd_daily <- calc_MDD_daily(
       sim_data = sim_data,
       soils = soils,
       used_depth_range_cm = used_depth_range_cm,
@@ -386,6 +403,7 @@ calc_WDD <- function(
       sm_periods = list(op = `>`, limit = SWP_limit_MPa)
     )
 
+    # Aggregate daily WDD to annual values
     res[[k1]] <- t(get_new_yearly_aggregations(
       x_daily = wdd_daily,
       temp_monthly = sim_data[["temp_monthly"]],
@@ -397,32 +415,10 @@ calc_WDD <- function(
   res
 }
 
-metric_WDDat5C0to100cm15bar <- function(
-  path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
-  soils, ...
-) {
-  stopifnot(check_metric_arguments(
-    out = match.arg(out),
-    req_soil_vars = "depth_cm"
-  ))
-
-  calc_WDD(
-    path = path,
-    name_sw2_run = name_sw2_run,
-    id_scen_used = id_scen_used,
-    list_years_scen_used = list_years_scen_used,
-    soils = soils,
-    Temp_limit_C = 5,
-    SWP_limit_MPa = -1.5,
-    used_depth_range_cm = c(0, 100),
-    ...
-  )
-}
 
 
 #--- DDD = Dry degree days [C x day] = MDD(op = `<`, limit_MPa = -3.0 MPa)
-calc_DDD <- function(
+calc_DDD_yearly <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   soils,
@@ -462,7 +458,7 @@ calc_DDD <- function(
       )
     )
 
-    ddd_daily <- get_MDD(
+    ddd_daily <- calc_MDD_daily(
       sim_data = sim_data,
       soils = soils,
       used_depth_range_cm = used_depth_range_cm,
@@ -493,7 +489,7 @@ metric_DDDat5C0to030cm30bar <- function(
     req_soil_vars = "depth_cm"
   ))
 
-  calc_DDD(
+  calc_DDD_yearly(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
@@ -517,7 +513,7 @@ metric_DDDat5C0to100cm30bar <- function(
     req_soil_vars = "depth_cm"
   ))
 
-  calc_DDD(
+  calc_DDD_yearly(
     path = path,
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
@@ -532,8 +528,7 @@ metric_DDDat5C0to100cm30bar <- function(
 }
 
 
-#--- SWA = Soil water availability [mm] (SWA above -3.0 and -3.9 MPa):
-# calculate monthly means
+#--- SWA = Soil water availability [mm] (SWA above -3.0 and -3.9 MPa)
 calc_SWA_mm <- function(
   sim_vwc_daily,
   soils,
@@ -726,7 +721,7 @@ calc_DSI <- function(
     )
 
     # Daily wet/dry conditions
-    dry_daily <- get_wetdry(
+    dry_daily <- calc_wetdry(
       sim_swp_daily = sim_data[["swp_daily"]],
       soils = soils,
       used_depth_range_cm = used_depth_range_cm,

@@ -31,7 +31,7 @@ calc_RecruitmentIndex_v2 <- function(
 
 
   # WDD that initiates a recruitment period (germination window)
-  wdd_start <- get_MDD(
+  wdd_start <- calc_MDD_daily(
     sim_data = sim_data,
     soils = soils,
     used_depth_range_cm = init_depth_range_cm,
@@ -40,7 +40,7 @@ calc_RecruitmentIndex_v2 <- function(
   )
 
   # WDD for recruitment
-  wdd_recruit <- get_MDD(
+  wdd_recruit <- calc_MDD_daily(
     sim_data = sim_data,
     soils = soils,
     used_depth_range_cm = recruitment_depth_range_cm,
@@ -51,7 +51,7 @@ calc_RecruitmentIndex_v2 <- function(
   N_days <- length(wdd_recruit[["values"]][[1]])
 
   # DDD that stops a recruitment period
-  ddd_stop <- get_MDD(
+  ddd_stop <- calc_MDD_daily(
     sim_data = sim_data,
     soils = soils,
     used_depth_range_cm = stop_depth_range_cm,
@@ -60,7 +60,7 @@ calc_RecruitmentIndex_v2 <- function(
   )
 
   # (Absence of) TDD that stops a recruitment period
-  tdd_nostop <- get_MDD(
+  tdd_nostop <- calc_MDD_daily(
     sim_data = sim_data,
     soils = soils,
     t_periods = list(op = `>`, limit = Temp_limit_C),
