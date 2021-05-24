@@ -1511,6 +1511,15 @@ determine_sw2_sim_time <- function(
     )
     x_time[, "Month"] <- as.POSIXlt(tmp, format = "%Y-%j", tz = "UTC")$mon + 1
 
+    if (anyNA(x_time[, "Month"])) {
+      # Apparently runs can be set up to have incorrect leap/nonleap-years;
+      # in those cases the last simulated day of some nonleap years is the
+      # 366-th day (which in reality doesn't exist) and
+      # for which `as.POSIXlt()` correctly produces an NA (with a warning)
+      # --> patch up and fill in month with 12 as if it were a leap year
+      x_time[is.na(x_time[, "Month"]), "Month"] <- 12
+    }
+
   } else if (sw2_tp == "Month") {
     x_time[, "Month"] <- x[[1]][, "Month"]
   }
