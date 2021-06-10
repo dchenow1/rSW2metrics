@@ -20,6 +20,7 @@
 \alias{metric_DSIat0to100cm15bar}
 \alias{metric_DSIat0to100cm30bar}
 \alias{metric_ET}
+\alias{metric_ETyr}
 \alias{metric_Evaporation_Seasonal}
 \alias{metric_ExtremeShortTermDryStress_Seasonal_top50cm}
 \alias{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}
@@ -143,6 +144,7 @@ They have at least the following arguments:
   \item \var{metric_DSIat0to100cm15bar}
   \item \var{metric_DSIat0to100cm30bar}
   \item \var{metric_ET}
+  \item \var{metric_ETyr}
   \item \var{metric_Evaporation_Seasonal}
   \item \var{metric_ExtremeShortTermDryStress_Seasonal_top50cm}
   \item \var{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}

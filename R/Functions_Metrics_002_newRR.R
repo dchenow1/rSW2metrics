@@ -1012,6 +1012,44 @@ metric_ET <- function(
   )
 }
 
+#' Annual evapotranspiration (ET) [mm]
+#' @noRd
+metric_ETyr <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "ts_years",
+  ...
+) {
+  stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    sim_data <- collect_sw2_sim_data(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      output_sets = list(
+        yr = list(
+          sw2_tp = "Year",
+          sw2_outs = "AET",
+          sw2_vars = "evapotr_cm",
+          varnames_are_fixed = TRUE
+        )
+      )
+    )
+
+    res[[k1]] <- format_yearly_to_matrix(
+      x = lapply(sim_data[["yr"]][["values"]], function(x) 10 * x),
+      years = sim_data[["yr"]][["time"]][, "Year"],
+      out_labels = "ET_mm"
+    )
+  }
+
+  res
+}
+
+
 #' Diffuse Recharge (DR) = Deep Drainage [mm]
 #' @noRd
 metric_DR <- function(
