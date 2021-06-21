@@ -423,10 +423,17 @@ extract_metrics <- function(args) {
 
       if (length(soils) > 1) {
         for (k in seq_along(soils)) {
-          stopifnot(
-            # Check that we have soils for every simulation runs
-            all(tag_run_rSFSW2_names %in% soils[[k]][, "site"])
-          )
+          # Check that we have soils for every simulation runs
+          is_run_wo_soils <- !(tag_run_rSFSW2_names %in% soils[[k]][, "site"])
+          if (any(is_run_wo_soils)) {
+            stop(
+              "We don't have soil data for simulation run(s): ",
+              paste0(
+                shQuote(tag_run_rSFSW2_names[is_run_wo_soils]),
+                collapse = ","
+              )
+            )
+          }
         }
       }
 
