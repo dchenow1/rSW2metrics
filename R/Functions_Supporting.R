@@ -1540,7 +1540,8 @@ collect_sw2_sim_data <- function(
       sw2_vars = NA_character_,
       varnames_are_fixed = TRUE
     )
-  )
+  ),
+  fail = TRUE
 ) {
   n_sets <- length(output_sets)
 
@@ -1589,11 +1590,30 @@ collect_sw2_sim_data <- function(
     # Subset columns
     for (k2 in seq_len(nvars)) {
       if (fixed[k2]) {
-        x_vals[[k2]] <- x[[k2]][, out[["sw2_vars"]][k2], drop = fixed[k2]]
+        x_vals[[k2]] <- try(
+          x[[k2]][, out[["sw2_vars"]][k2], drop = fixed[k2]],
+          silent = TRUE
+        )
+
       } else {
         tmp <- grep(out[["sw2_vars"]][k2], colnames(x[[k2]]), value = TRUE)
-        x_vals[[k2]] <- x[[k2]][, tmp, drop = fixed[k2]]
-        colnames(x_vals[[k2]]) <- tmp
+        if (length(tmp) > 0) {
+          x_vals[[k2]] <- x[[k2]][, tmp, drop = fixed[k2]]
+          colnames(x_vals[[k2]]) <- tmp
+        } else {
+          x_vals[[k2]] <- try(stop("variables not found"), silent = TRUE)
+        }
+      }
+
+      if (inherits(x_vals[[k2]], "try-error")) {
+        if (fail) {
+          stop(x_vals[[k2]])
+        } else {
+          x_vals[[k2]] <- array(
+            dim = c(nrow(x[[k2]]), 1),
+            dimnames = list(NULL, out[["sw2_vars"]][k2])
+          )
+        }
       }
     }
 
