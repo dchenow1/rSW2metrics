@@ -26,6 +26,7 @@
 \alias{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}
 \alias{metric_FrostDays_Seasonal}
 \alias{metric_FrostDaysAtNeg5C}
+\alias{metric_land_cover_v2}
 \alias{metric_NonDrySWA_Seasonal_top50cm}
 \alias{metric_NonDrySWA_Seasonal_wholeprofile}
 \alias{metric_PET_Seasonal}
@@ -75,6 +76,8 @@
 \alias{metric_TranspirationSeasonality_v4}
 \alias{metric_TranspirationSeasonality_v5}
 \alias{metric_TranspirationSeasonality_v6}
+\alias{metric_veg_biomass_v1}
+\alias{metric_veg_biomass_v2}
 \alias{metric_VWC_Seasonal_top50cm}
 \alias{metric_VWC_Seasonal_wholeprofile}
 \alias{metric_WDDat5C0to020cm15bar_quarterly}
@@ -150,6 +153,7 @@ They have at least the following arguments:
   \item \var{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}
   \item \var{metric_FrostDays_Seasonal}
   \item \var{metric_FrostDaysAtNeg5C}
+  \item \var{metric_land_cover_v2}
   \item \var{metric_NonDrySWA_Seasonal_top50cm}
   \item \var{metric_NonDrySWA_Seasonal_wholeprofile}
   \item \var{metric_PET_Seasonal}
@@ -199,6 +203,8 @@ They have at least the following arguments:
   \item \var{metric_TranspirationSeasonality_v4}
   \item \var{metric_TranspirationSeasonality_v5}
   \item \var{metric_TranspirationSeasonality_v6}
+  \item \var{metric_veg_biomass_v1}
+  \item \var{metric_veg_biomass_v2}
   \item \var{metric_VWC_Seasonal_top50cm}
   \item \var{metric_VWC_Seasonal_wholeprofile}
   \item \var{metric_WDDat5C0to020cm15bar_quarterly}
