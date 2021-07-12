@@ -1609,23 +1609,24 @@ collect_sw2_sim_data <- function(
 
 
     #--- Extract time
-    has_subset_years <- !missing(years) && length(years) > 0
-
     x_time <- determine_sw2_sim_time(
       x,
-      years = if (has_subset_years) years else unique(x[[1]][, "Year"]),
+      years = unique(x[[1]][, "Year"]),
       sw2_tp = out[["sw2_tp"]]
     )
 
 
     #--- Subset to requested years
-    if (has_subset_years) {
+    if (!missing(years) && length(years) > 0) {
       ids <- x_time[, "Year"] %in% years
-      x_time <- x_time[ids, , drop = FALSE]
-      x_vals <- lapply(
-        x_vals,
-        function(x) if (is.null(dim(x))) x[ids] else x[ids, , drop = FALSE]
-      )
+
+      if (any(!ids)) {
+        x_time <- x_time[ids, , drop = FALSE]
+        x_vals <- lapply(
+          x_vals,
+          function(x) if (is.null(dim(x))) x[ids] else x[ids, , drop = FALSE]
+        )
+      }
     }
 
 
