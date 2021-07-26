@@ -26,6 +26,7 @@
 \alias{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}
 \alias{metric_FrostDays_Seasonal}
 \alias{metric_FrostDaysAtNeg5C}
+\alias{metric_land_cover_v1}
 \alias{metric_land_cover_v2}
 \alias{metric_NonDrySWA_Seasonal_top50cm}
 \alias{metric_NonDrySWA_Seasonal_wholeprofile}
@@ -154,6 +155,7 @@ They have at least the following arguments:
   \item \var{metric_ExtremeShortTermDryStress_Seasonal_wholeprofile}
   \item \var{metric_FrostDays_Seasonal}
   \item \var{metric_FrostDaysAtNeg5C}
+  \item \var{metric_land_cover_v1}
   \item \var{metric_land_cover_v2}
   \item \var{metric_NonDrySWA_Seasonal_top50cm}
   \item \var{metric_NonDrySWA_Seasonal_wholeprofile}
