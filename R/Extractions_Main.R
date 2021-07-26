@@ -499,6 +499,8 @@ extract_metrics <- function(args) {
 
 
   # Do the extractions
+  s <- NULL # define `s` to avoid "Undefined global functions or variables"
+
   values_all_sites <- foreach::foreach(
     s = indexes,
     .combine = rbind,
@@ -507,7 +509,7 @@ extract_metrics <- function(args) {
   ) %dopar% {
 
     has_sw2_output <- check_all_output_available_of_run(
-      path_to_run = file.path(fun_args[["path"]], run_rSFSW2_names[s]), # nolint
+      path_to_run = file.path(fun_args[["path"]], run_rSFSW2_names[s]),
       N_scen = prjpars[["N_scen"]],
       check_input = prjpars[["has_rSOILWAT2_inputs"]]
     )
@@ -516,14 +518,14 @@ extract_metrics <- function(args) {
       res <- process_values_one_site(
         fun = args[["fun_name"]],
         fun_args = fun_args,
-        name_sw2_run = run_rSFSW2_names[s], # nolint
-        name_sw2_run_soils = tag_run_rSFSW2_names[s], # nolint
+        name_sw2_run = run_rSFSW2_names[s],
+        name_sw2_run_soils = tag_run_rSFSW2_names[s],
         is_soils_input = is_soils_input,
         soils = if (exists("soils")) soils,
         soil_variables = soil_variables
       )
 
-      format_metric_1sim(x = res, id = s) # nolint
+      format_metric_1sim(x = res, id = s)
     }
   }
 
