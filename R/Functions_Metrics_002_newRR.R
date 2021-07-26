@@ -1423,6 +1423,55 @@ metric_Climate_Annual <- function(
 }
 
 
+
+metric_Tmean_monthly_clim <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "across_years",
+  ...
+) {
+  stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    tmp <- lapply(
+      list_years_scen_used[[k1]],
+      function(yrs) {
+        sim_data <- collect_sw2_sim_data(
+          path = path,
+          name_sw2_run = name_sw2_run,
+          id_scen = id_scen_used[k1],
+          years = yrs,
+          output_sets = list(
+            mon = list(
+              sw2_tp = "Month",
+              sw2_outs = "TEMP",
+              sw2_vars = c(tmean = "avg_C"),
+              varnames_are_fixed = TRUE
+            )
+          )
+        )
+
+        format_monthly_to_matrix(
+          x = tapply(
+            X = sim_data[["mon"]][["values"]][["tmean"]],
+            INDEX = sim_data[["mon"]][["time"]][, "Month"],
+            FUN = mean
+          ),
+          years = NA,
+          out_labels = "Tmean_C"
+        )
+      }
+    )
+
+    res[[k1]] <- do.call(cbind, tmp)
+  }
+
+  res
+}
+
+
+
 #--- Soil moisture regimes / soil temperature regimes
 metric_SMTRs <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
