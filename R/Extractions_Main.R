@@ -360,7 +360,7 @@ extract_metrics <- function(args) {
   # Check cores
   tmp <- parallel::detectCores() - 1
   if (is.na(tmp)) tmp <- args[["ncores"]]
-  args[["ncores"]] <- min(args[["ncores"]], tmp)
+  args[["ncores"]] <- as.integer(min(args[["ncores"]], tmp))
 
 
   # Let user know what is happening
