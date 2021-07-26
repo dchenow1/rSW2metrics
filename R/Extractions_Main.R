@@ -258,6 +258,9 @@ check_project_parameters <- function(x, args) {
 #' Main function that organizes the extraction of metrics of a simulation
 #' project and stores them on disk
 #'
+#' @param args A named list with name - value pairs of arguments;
+#'   a list as produced by \code{\link{process_arguments}}.
+#'
 #' @export
 extract_metrics <- function(args) {
 

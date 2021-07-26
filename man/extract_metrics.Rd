@@ -7,6 +7,10 @@ project and stores them on disk}
 \usage{
 extract_metrics(args)
 }
+\arguments{
+\item{args}{A named list with name - value pairs of arguments;
+a list as produced by \code{\link{process_arguments}}.}
+}
 \description{
 Main function that organizes the extraction of metrics of a simulation
 project and stores them on disk
