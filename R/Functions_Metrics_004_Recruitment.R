@@ -1,6 +1,10 @@
 
 #--- Plant recruitment index:
-calc_RecruitmentIndex_v2 <- function(
+calc_RecruitmentIndex_v2 <- function(...) {
+  calc_RecruitmentIndex_v3(..., tol = 0)
+}
+
+calc_RecruitmentIndex_v3 <- function(
   sim_data,
   soils,
   hemisphere_NS = c("N", "S"),
@@ -17,6 +21,7 @@ calc_RecruitmentIndex_v2 <- function(
   stop_TDD = 0,
   stop_days_TDD = 0,
   include_year = FALSE,
+  tol = sqrt(.Machine$double.eps),
   ...
 ) {
   stopifnot(requireNamespace("zoo", quietly = TRUE))
@@ -129,12 +134,12 @@ calc_RecruitmentIndex_v2 <- function(
 
   # List of end/stop days due to (absence of) TDD
   if (stop_TDD <= 0 && stop_days_TDD < 1) {
-    ids_stop_TDD <- which(tdd_nostop[["values"]][[1]] <= 0)
+    ids_stop_TDD <- which(tdd_nostop[["values"]][[1]] <= tol)
 
   } else {
     # (i) after `stop_days_TDD` with TDD
     tmp3a <- zoo::rollsum(
-      tdd_nostop[["values"]][[1]] <= 0,
+      tdd_nostop[["values"]][[1]] <= tol,
       k = stop_days_TDD,
       fill = 0,
       align = "right"
@@ -146,7 +151,7 @@ calc_RecruitmentIndex_v2 <- function(
       k = stop_days_TDD,
       fill = 0,
       align = "right"
-    ) <= stop_TDD
+    ) <= stop_TDD + tol
 
     ids_stop_TDD <- 1 + which(tmp3a & tmp3b)
     tmp <- length(ids_stop_TDD)
@@ -350,7 +355,7 @@ metric_RecruitmentIndex_v4 <- function(
       )
     )
 
-    res[[k1]] <- t(calc_RecruitmentIndex_v2(
+    res[[k1]] <- t(calc_RecruitmentIndex_v3(
       sim_data = sim_data,
       soils = soils,
       hemisphere_NS = "N",
@@ -444,7 +449,7 @@ metric_RecruitmentIndex_v5 <- function(
       )
     )
 
-    res[[k1]] <- t(calc_RecruitmentIndex_v2(
+    res[[k1]] <- t(calc_RecruitmentIndex_v3(
       sim_data = sim_data,
       soils = soils,
       hemisphere_NS = "N",
