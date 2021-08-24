@@ -1422,15 +1422,11 @@ metric_Climate_Annual <- function(
   res
 }
 
-
-
-metric_Tmean_monthly_clim <- function(
+calc_Tmean_monthly <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "across_years",
+  out = c("ts_years", "across_years"),
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
-
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
@@ -1452,15 +1448,23 @@ metric_Tmean_monthly_clim <- function(
           )
         )
 
-        format_monthly_to_matrix(
-          x = tapply(
-            X = sim_data[["mon"]][["values"]][["tmean"]],
-            INDEX = sim_data[["mon"]][["time"]][, "Month"],
-            FUN = mean
-          ),
-          years = NA,
-          out_labels = "Tmean_C"
-        )
+        if (out == "ts_years") {
+          format_monthly_to_matrix(
+            x = sim_data[["mon"]][["values"]][["tmean"]],
+            years = unique(sim_data[["mon"]][["time"]][, "Year"]),
+            out_labels = "Tmean_C"
+          )
+        } else if (out == "across_years") {
+          format_monthly_to_matrix(
+            x = tapply(
+              X = sim_data[["mon"]][["values"]][["tmean"]],
+              INDEX = sim_data[["mon"]][["time"]][, "Month"],
+              FUN = mean
+            ),
+            years = NA,
+            out_labels = "Tmean_C"
+          )
+        }
       }
     )
 
@@ -1468,6 +1472,41 @@ metric_Tmean_monthly_clim <- function(
   }
 
   res
+}
+
+
+metric_Tmean_monthly <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "ts_years",
+  ...
+) {
+  stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  calc_Tmean_monthly(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    id_scen_used = id_scen_used,
+    list_years_scen_used = list_years_scen_used,
+    out = out,
+    ...
+  )
+}
+
+metric_Tmean_monthly_clim <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "across_years",
+  ...
+) {
+  stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  calc_Tmean_monthly(
+    path = path,
+    name_sw2_run = name_sw2_run,
+    id_scen_used = id_scen_used,
+    list_years_scen_used = list_years_scen_used,
+    out = out,
+    ...
+  )
 }
 
 
