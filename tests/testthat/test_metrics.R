@@ -5,11 +5,43 @@ test_that("Test data availability", {
 })
 
 
+# Aggregation function for rSOILWAT2 input/output for each simulated site
+foo_metrics <- function(
+  fun,
+  fun_args,
+  run_rSFSW2_names,
+  is_soils_input,
+  N_sites
+) {
+  lapply(
+    seq_len(N_sites),
+    function(s) {
+      tmp <- suppressWarnings(process_values_one_site(
+        fun = fun,
+        fun_args = fun_args,
+        name_sw2_run = run_rSFSW2_names[s],
+        is_soils_input = is_soils_input,
+        soil_variables <- c("depth", "sand", "clay")
+      ))
+      format_metric_1sim(x = tmp, id = s)
+    }
+  )
+}
+
+
 test_that("Check metrics", {
   skip_on_ci()
 
   #--- List all metric functions
   fun_metrics <- list_all_metrics()
+
+
+  #------ Timing (only if interactively used)
+  do_timing <- interactive() && !testthat::is_testing()
+  if (do_timing) {
+    print("do timing")
+    time_metrics <- vector("numeric", length = length(fun_metrics))
+  }
 
 
   #--- Create an example rSOILWAT2 simulation run with several scenarios
@@ -172,19 +204,26 @@ test_that("Check metrics", {
     )
 
     # Call aggregation function for rSOILWAT2 input/output for each site `s`
-    res <- lapply(
-      seq_len(N_sites),
-      function(s) {
-        tmp <- suppressWarnings(process_values_one_site(
+    if (!do_timing) {
+      res <- foo_metrics(
+        fun = fun_metrics[k1],
+        fun_args = fun_args,
+        run_rSFSW2_names = run_rSFSW2_names,
+        is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
+        N_sites = N_sites
+      )
+
+    } else {
+      time_metrics[k1] <- system.time(
+        res <- foo_metrics(
           fun = fun_metrics[k1],
           fun_args = fun_args,
-          name_sw2_run = run_rSFSW2_names[s],
+          run_rSFSW2_names = run_rSFSW2_names,
           is_soils_input = has_fun_soils_as_arg(fun_metrics[k1]),
-          soil_variables <- c("depth", "sand", "clay")
-        ))
-        format_metric_1sim(x = tmp, id = s)
-      }
-    )
+          N_sites = N_sites
+        )
+      )["elapsed"]
+    }
 
 
     N_yrs_expected <- sum(lengths(fun_args[["list_years_scen_used"]]))
@@ -250,6 +289,14 @@ test_that("Check metrics", {
     }
   }
 
-  #--- Cleanup
+
+  #------ Report on timing (only if interactively used)
+  if (do_timing) {
+    ttime <- data.frame(metric = fun_metrics, time = time_metrics)
+    print(ttime[order(ttime$time, decreasing = TRUE), ])
+  }
+
+
+  #------ Cleanup
   unlink(prjpars[["dir_sw2_output"]])
 })
