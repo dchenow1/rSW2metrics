@@ -1429,6 +1429,12 @@ calc_Tmean_monthly <- function(
 ) {
   res <- list()
 
+  if (out == "ts_years" && !isTRUE(is.list(list_years_scen_used[[1]]))) {
+    # Code below expects lists of lists of year vectors
+    # as provided by default if out is "across_years" --> convert
+    list_years_scen_used <- lapply(list_years_scen_used, function(x) list(x))
+  }
+
   for (k1 in seq_along(id_scen_used)) {
     tmp <- lapply(
       list_years_scen_used[[k1]],
