@@ -1,5 +1,5 @@
 Package: rSW2metrics
-Title: Calculate ecohydrological metrics from SOILWAT2 simulations
+Title: Calculate Ecohydrological Metrics from SOILWAT2 Simulations
 Version: 0.0.0.9000
 Authors@R: c(
   person(
@@ -14,7 +14,7 @@ Depends:
     methods
 Imports:
     rSOILWAT2,
-    rSW2utils,
+    rSW2utils (>= 0.1.0),
     memoise (>= 2.0.0),
     parallel,
     foreach (>= 1.5.0),
@@ -22,10 +22,10 @@ Imports:
 Suggests:
     modifiedmk,
     reshape2,
-    rSW2data,
-    rSW2funs,
+    rSW2data (>= 0.1.1),
+    rSW2funs (>= 0.1.0),
     zoo,
-    testthat (>= 3.0),
+    testthat (>= 3.0.0),
     spelling,
     lintr,
     covr
