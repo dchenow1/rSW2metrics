@@ -741,3 +741,63 @@ metric_DR_daily <- function(
 
   res
 }
+
+
+# Daily transpiration, daily evaporation, daily potential evapotranspiration
+# units are millimeter
+metric_TEPET_daily <- function(
+  path, name_sw2_run, id_scen_used, list_years_scen_used,
+  out = "ts_years",
+  include_year = FALSE,
+  ...
+) {
+  stopifnot(check_metric_arguments(out = match.arg(out)))
+
+  res <- list()
+
+  for (k1 in seq_along(id_scen_used)) {
+    sim_data <- collect_sw2_sim_data(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = id_scen_used[k1],
+      years = list_years_scen_used[[k1]],
+      output_sets = list(
+        day = list(
+          sw2_tp = "Day",
+          sw2_outs = c("TRANSP", "AET", "PET"),
+          sw2_vars = c(
+            t = "transp_total_Lyr",
+            et = "evapotr_cm",
+            pet = "pet_cm"
+          ),
+          varnames_are_fixed = FALSE
+        )
+      )
+    )
+
+    t_daily <- 10 * apply(sim_data[["day"]][["values"]][["t"]], 1, sum)
+
+    res[[k1]] <- rbind(
+      format_daily_to_matrix(
+        x = t_daily,
+        time = sim_data[["day"]][["time"]],
+        out_labels = "T_mm",
+        include_year = include_year
+      ),
+      format_daily_to_matrix(
+        x = 10 * sim_data[["day"]][["values"]][["et"]] - t_daily,
+        time = sim_data[["day"]][["time"]],
+        out_labels = "E_mm",
+        include_year = include_year
+      ),
+      format_daily_to_matrix(
+        x = 10 * sim_data[["day"]][["values"]][["pet"]],
+        time = sim_data[["day"]][["time"]],
+        out_labels = "PET_mm",
+        include_year = include_year
+      )
+    )
+  }
+
+  res
+}

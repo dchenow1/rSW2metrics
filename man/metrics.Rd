@@ -67,6 +67,7 @@
 \alias{metric_TemperatureMean_MeanMonthly}
 \alias{metric_TemperatureMean_Seasonal}
 \alias{metric_TemperatureMin_Seasonal}
+\alias{metric_TEPET_daily}
 \alias{metric_Tmean_daily}
 \alias{metric_Tmean_JJA}
 \alias{metric_Tmean_monthly}
@@ -197,6 +198,7 @@ They have at least the following arguments:
   \item \var{metric_TemperatureMean_MeanMonthly}
   \item \var{metric_TemperatureMean_Seasonal}
   \item \var{metric_TemperatureMin_Seasonal}
+  \item \var{metric_TEPET_daily}
   \item \var{metric_Tmean_daily}
   \item \var{metric_Tmean_JJA}
   \item \var{metric_Tmean_monthly}
