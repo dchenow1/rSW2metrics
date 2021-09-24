@@ -528,9 +528,57 @@ metric_DDDat5C0to100cm30bar <- function(
 }
 
 
-#--- SWA = Soil water availability [mm] (SWA above -3.0 and -3.9 MPa)
+#' Calculate soil water availability \var{SWA}
+#'
+#' We define available soil water `SWA` as the amount of soil water `SWC`
+#' that exceeds some base (= critical) amount of soil water `SWC_crit[i]`,
+#' i.e.,
+#' \deqn{SWA[t,i] = max{0, SWC[t,i] - SWC_crit[i]}}
+#' for day t and soil layer i.
+#'
+#' @section Details:
+#' The base (= critical) amount of soil water `SWC_crit[i]` is specified via a
+#' critical soil water potential `SWP_crit`, here \code{SWP_limit_MPa}, e.g.,
+#' `SWP_crit = -3.0 MPa`.
+#' A pedotransfer function of the water release curve is used to
+#' translate `SWP` into volumetric water content `VWC`, i.e.,
+#' \deqn{VWC_crit[i,matric] = f(SWP_crit, soil texture[i])}
+#' where soil texture is the weight fractions of sand, clay, and silt of
+#' the matric soil component.
+#' However, the translation is only valid for the matric soil, i.e.,
+#' the component without coarse fragments.
+#'
+#' `SWA` in the presence of coarse fragments is calculated as
+#'
+# nolint start
+#' \deqn{SWA[t,i] = max{0, SWC[t,i] - w[i] * (1 - cfrag[i]) * VWC_crit[i,matric]}}
+#' or equivalently
+#' \deqn{SWA[t,i] = max{0, w[i] * (1 - cfrag[i]) * (VWC[t,i,matric] - VWC_crit[i,matric])}}
+# nolint end
+#'
+#' where matric volumetric water `VWC` is multiplied by `w[i] * (1 - cfrag[i])`
+#' to calculate the amount of water in soil layer i,
+#' correcting for the volume occupied by coarse fragments.
+#'
+#' For day t, soil layer i, soil layer width `w[i]`, and
+#' `cfrag[i]` = fraction of coarse fragments.
+#'
+#' @param sim_swc_daily A named list with a "time" element and a
+#'    "values" element containing daily \var{"swc"} for each soil layer
+#'    in units of centimeters.
+#' @param soils A named list with soil parameters \var{"depth_cm"},
+#'   \var{"sand_frac"},\var{"clay_frac"}, and \var{"gravel_content"}
+#'   as numeric vectors with values for each soil layer.
+#' @param used_depth_range_cm A numeric vector of length two.
+#' @param SWP_limit_MPa A numeric value.
+#'
+#' @return A list with elements "time" and "values" where values represent
+#'   available soil water in units of millimeters above \code{SWP_limit_MPa}
+#'   summed across \code{used_depth_range_cm}.
+#'
+#' @md
 calc_SWA_mm <- function(
-  sim_vwc_daily,
+  sim_swc_daily,
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf
@@ -538,7 +586,7 @@ calc_SWA_mm <- function(
   widths_cm <- calc_soillayer_weights(
     soil_depths_cm = soils[["depth_cm"]],
     used_depth_range_cm = used_depth_range_cm,
-    n_slyrs_has = ncol(sim_vwc_daily[["values"]][["vwc"]])
+    n_slyrs_has = ncol(sim_swc_daily[["values"]][["swc"]])
   )
 
   id_slyrs <- which(!is.na(widths_cm))
@@ -546,28 +594,24 @@ calc_SWA_mm <- function(
   if (length(id_slyrs) > 0) {
     widths_cm <- widths_cm[id_slyrs]
 
-    # Determine SWA for each soil layer
-    base_SWCmatric_mm <- if (is.finite(SWP_limit_MPa)) {
-      10 * widths_cm * rSOILWAT2::SWPtoVWC(
+    # Calculate SWC threshold (corrected for coarse fragments)
+    # SWC <-> VWC exists only for the matric component
+    base_SWC_mm <- if (is.finite(SWP_limit_MPa)) {
+      rSOILWAT2::SWPtoVWC(
         swp = SWP_limit_MPa,
         sand = soils[["sand_frac"]][id_slyrs],
         clay = soils[["clay_frac"]][id_slyrs]
-      )
+      ) * 10 * widths_cm * (1 - soils[["gravel_content"]][id_slyrs])
+
     } else {
       rep(0, length(id_slyrs))
     }
 
-    swc_matric_mm <- 10 * sweep(
-      x = sim_vwc_daily[["values"]][["vwc"]][, id_slyrs, drop = FALSE],
-      MARGIN = 2,
-      STATS = widths_cm,
-      FUN = "*"
-    )
-
+    # Determine SWA [mm] for each soil layer as SWC - SWC_base
     swa_by_layer <- sweep(
-      x = swc_matric_mm,
+      x = 10 * sim_swc_daily[["values"]][["swc"]][, id_slyrs, drop = FALSE],
       MARGIN = 2,
-      STATS = base_SWCmatric_mm,
+      STATS = base_SWC_mm,
       FUN = "-"
     )
     swa_by_layer[swa_by_layer < 0] <- 0
@@ -581,17 +625,18 @@ calc_SWA_mm <- function(
 
   } else {
     # No soil layers in the depth range
-    swa_daily_values <- rep(NA, nrow(sim_vwc_daily[["time"]]))
+    swa_daily_values <- rep(NA, nrow(sim_swc_daily[["time"]]))
   }
 
   list(
-    time = sim_vwc_daily[["time"]],
+    time = sim_swc_daily[["time"]],
     values = list(swa_daily_values)
   )
 }
 
 
 
+# soils must have "depth_cm", "sand_frac", "clay_frac", and "gravel_content"
 get_SWA <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
@@ -610,10 +655,10 @@ get_SWA <- function(
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
       output_sets = list(
-        vwc_daily = list(
+        swc_daily = list(
           sw2_tp = "Day",
-          sw2_outs = "VWCMATRIC",
-          sw2_vars = c(vwc = "Lyr"),
+          sw2_outs = "SWCBULK",
+          sw2_vars = c(swc = "Lyr"),
           varnames_are_fixed = FALSE
         ),
         mon = list(
@@ -626,7 +671,7 @@ get_SWA <- function(
     )
 
     swa_daily <- calc_SWA_mm(
-      sim_vwc_daily = sim_data[["vwc_daily"]],
+      sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
       used_depth_range_cm = used_depth_range_cm
@@ -651,7 +696,7 @@ metric_SWAat0to100cm30bar <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA(
@@ -673,7 +718,7 @@ metric_SWAat0to100cm39bar <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA(

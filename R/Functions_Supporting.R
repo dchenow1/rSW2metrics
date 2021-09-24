@@ -748,6 +748,8 @@ get_swp_weighted <- function(
   used_depth_range_cm = NULL,
   ...
 ) {
+  warning("`get_swp_weighted()` uses matric-VWC!")
+
   vwc <- extract_from_sw2(
     path = path,
     name_sw2_run = name_sw2_run,

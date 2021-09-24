@@ -66,4 +66,4 @@ first_month_of_year <- 12 # First season (winter) starts in December
 # Soil parameters
 Nmax_soillayers <- 13
 # see `list_soil_variables()` for possible values
-used_soil_variables <- c("depth", "sand", "clay")
+used_soil_variables <- c("depth", "sand", "clay", "gravel")
