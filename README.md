@@ -1,4 +1,4 @@
-# rSW2metrics: Calculation of Ecohdryolgial Metrics from rSOILWAT2 simulations
+# rSW2metrics: Calculation of Ecohydrological Metrics from rSOILWAT2 simulations
 
 <!-- badges: start -->
 [ ![R build status][1]][2] [ ![github release][5]][6] [![license][7]][8] [![codecov status][9]][10]
