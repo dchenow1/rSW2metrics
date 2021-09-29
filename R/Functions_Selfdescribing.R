@@ -31,13 +31,17 @@ check_metric_arguments <- function(out, req_soil_vars) {
     envir = parent.frame(2L)
   ))
 
-  fun_args <- lapply(fun_args, eval)
+  # Evaluate arguments, but not function name (first element)
+  fun_name <- if (is.function(fun_args[[1]])) {
+    "anonymous"
+  } else {
+    as.character(fun_args[[1]])
+  }
+
+  fun_args <- lapply(fun_args[-1], eval)
 
   if (missing(out) || is.null(out)) {
-    stop(
-      "'out' is a required argument to function ",
-      shQuote(as.character(fun_args[[1]]))
-    )
+    stop("'out' is a required argument to function ", shQuote(fun_name))
   }
 
   if ("out" %in% names(fun_args) && !(fun_args[["out"]] %in% c(out, "raw"))) {
@@ -57,7 +61,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
       stop(
         "'list_years_scen_used' ",
         "should be a list with integer vectors ",
-        "for function ", shQuote(as.character(fun_args[[1]]))
+        "for function ", shQuote(fun_name)
       )
     }
 
@@ -79,7 +83,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
       stop(
         "'list_years_scen_used' ",
         "should be a list of lists with integer vectors ",
-        "for function ", shQuote(as.character(fun_args[[1]]))
+        "for function ", shQuote(fun_name)
       )
     }
   } else if (out %in% "raw") {
@@ -112,8 +116,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
 
     } else {
       stop(
-        "Soil variables are required for function ",
-        shQuote(as.character(fun_args[[1]])),
+        "Soil variables are required for function ", shQuote(fun_name),
         " but there is no 'soils' object."
       )
     }
