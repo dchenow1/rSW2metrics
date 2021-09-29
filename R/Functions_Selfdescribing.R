@@ -13,7 +13,8 @@ has_fun_soils_as_arg <- function(fun) {
 }
 
 has_fun_ts_as_output <- function(fun) {
-  isTRUE(formals(fun)[["out"]] == "ts_years")
+  tmp <- eval(formals(fun)[["out"]])
+  isTRUE(tmp == "ts_years" || tmp == c("ts_years", "raw"))
 }
 
 is_fun_collecting_inputs <- function(fun) {
@@ -30,6 +31,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
     envir = parent.frame(2L)
   ))
 
+  fun_args <- lapply(fun_args, eval)
 
   if (missing(out) || is.null(out)) {
     stop(
@@ -38,7 +40,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
     )
   }
 
-  if ("out" %in% names(fun_args) && out != fun_args[["out"]]) {
+  if ("out" %in% names(fun_args) && !(fun_args[["out"]] %in% c(out, "raw"))) {
     stop(
       "Inconsistency in 'out': ",
       shQuote(out), " versus ", shQuote(fun_args[["out"]])
@@ -80,6 +82,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
         "for function ", shQuote(as.character(fun_args[[1]]))
       )
     }
+  } else if (out %in% "raw") {
   }
 
   if (!missing(req_soil_vars)) {

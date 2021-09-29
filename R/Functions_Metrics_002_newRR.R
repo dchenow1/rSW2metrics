@@ -99,10 +99,11 @@ get_vpd <- function(
 metric_CWD <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  out <- match.arg(out)
+  stopifnot(check_metric_arguments(out = "ts_years"))
 
   res <- list()
 
@@ -139,17 +140,22 @@ metric_CWD <- function(
       )
     )
 
-    res[[k1]] <- t(get_new_yearly_aggregations(
-      x_daily = cwd_daily,
-      # (Monthly) mean air temperature
-      temp_monthly = sim_data[["mon"]],
-      fun_time = sum,
-      fun_extreme = max,
-      output = c(
-        "values", "seasonal_variability", "seasonality",
-        "extreme_mean010day"
-      )
-    ))
+    res[[k1]] <- if (out == "ts_years") {
+      t(get_new_yearly_aggregations(
+        x_daily = cwd_daily,
+        # (Monthly) mean air temperature
+        temp_monthly = sim_data[["mon"]],
+        fun_time = sum,
+        fun_extreme = max,
+        output = c(
+          "values", "seasonal_variability", "seasonality",
+          "extreme_mean010day"
+        )
+      ))
+
+    } else if (out == "raw") {
+      cwd_daily
+    }
   }
 
   res
@@ -271,11 +277,13 @@ calc_MDD_daily <- function(
 #--- Annual sum of daily TDDat5C
 metric_TDDat5C <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   soils, ...
 ) {
+  out <- match.arg(out)
+
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = "depth_cm"
   ))
 
@@ -327,16 +335,21 @@ metric_TDDat5C <- function(
     )
 
     # Aggregate daily TDD to annual values
-    res[[k1]] <- t(get_new_yearly_aggregations(
-      x_daily = tdd_daily,
-      fun_time = sum,
-      fun_extreme = max,
-      periods = list(op = `>`, limit = 0),
-      output = c(
-        "values", "seasonal_variability",
-        "extreme_duration_consecutive_periods_days"
-      )
-    ))
+    res[[k1]] <- if (out == "ts_years") {
+      t(get_new_yearly_aggregations(
+        x_daily = tdd_daily,
+        fun_time = sum,
+        fun_extreme = max,
+        periods = list(op = `>`, limit = 0),
+        output = c(
+          "values", "seasonal_variability",
+          "extreme_duration_consecutive_periods_days"
+        )
+      ))
+
+    } else if (out == "raw") {
+      tdd_daily
+    }
   }
 
   res
@@ -347,11 +360,13 @@ metric_TDDat5C <- function(
 #--- Annual sum of daily WDD
 metric_WDDat5C0to100cm15bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   soils, ...
 ) {
+  out <- match.arg(out)
+
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = "depth_cm"
   ))
 
@@ -404,12 +419,17 @@ metric_WDDat5C0to100cm15bar <- function(
     )
 
     # Aggregate daily WDD to annual values
-    res[[k1]] <- t(get_new_yearly_aggregations(
-      x_daily = wdd_daily,
-      temp_monthly = sim_data[["temp_monthly"]],
-      fun_time = sum,
-      output = c("values", "seasonality")
-    ))
+    res[[k1]] <- if (out == "ts_years") {
+      t(get_new_yearly_aggregations(
+        x_daily = wdd_daily,
+        temp_monthly = sim_data[["temp_monthly"]],
+        fun_time = sum,
+        output = c("values", "seasonality")
+      ))
+
+    } else if (out == "raw") {
+      wdd_daily
+    }
   }
 
   res
@@ -421,6 +441,7 @@ metric_WDDat5C0to100cm15bar <- function(
 calc_DDD_yearly <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
+  out = c("ts_years", "raw"),
   soils,
   used_depth_range_cm = NULL,
   Temp_limit_C = 5,
@@ -428,6 +449,7 @@ calc_DDD_yearly <- function(
   output = c("values", "extreme_value_consecutive_periods"),
   ...
 ) {
+  out <- match.arg(out)
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
@@ -466,13 +488,18 @@ calc_DDD_yearly <- function(
       sm_periods = list(op = `<`, limit = SWP_limit_MPa)
     )
 
-    res[[k1]] <- t(get_new_yearly_aggregations(
-      x_daily = ddd_daily,
-      fun_time = sum,
-      fun_extreme = max,
-      periods = list(op = `>`, limit = 0),
-      output = output
-    ))
+    res[[k1]] <- if (out == "ts_years") {
+      t(get_new_yearly_aggregations(
+        x_daily = ddd_daily,
+        fun_time = sum,
+        fun_extreme = max,
+        periods = list(op = `>`, limit = 0),
+        output = output
+      ))
+
+    } else if (out == "raw") {
+      ddd_daily
+    }
   }
 
   res
@@ -480,12 +507,13 @@ calc_DDD_yearly <- function(
 
 metric_DDDat5C0to030cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
-  soils,
-  ...
+  out = c("ts_years", "raw"),
+  soils, ...
 ) {
+  out <- match.arg(out)
+
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = "depth_cm"
   ))
 
@@ -494,6 +522,7 @@ metric_DDDat5C0to030cm30bar <- function(
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     soils = soils,
     Temp_limit_C = 5,
     SWP_limit_MPa = -3,
@@ -505,11 +534,13 @@ metric_DDDat5C0to030cm30bar <- function(
 
 metric_DDDat5C0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   soils, ...
 ) {
+  out <- match.arg(out)
+
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = "depth_cm"
   ))
 
@@ -518,6 +549,7 @@ metric_DDDat5C0to100cm30bar <- function(
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     soils = soils,
     Temp_limit_C = 5,
     SWP_limit_MPa = -3,
@@ -640,11 +672,13 @@ calc_SWA_mm <- function(
 get_SWA <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
+  out = c("ts_years", "raw"),
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
   ...
 ) {
+  out <- match.arg(out)
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
@@ -677,12 +711,17 @@ get_SWA <- function(
       used_depth_range_cm = used_depth_range_cm
     )
 
-    res[[k1]] <- t(get_new_yearly_aggregations(
-      x_daily = swa_daily,
-      temp_monthly = sim_data[["mon"]],
-      fun_time = mean,
-      output = c("values", "seasonal_variability", "seasonality")
-    ))
+    res[[k1]] <- if (out == "ts_years") {
+      t(get_new_yearly_aggregations(
+        x_daily = swa_daily,
+        temp_monthly = sim_data[["mon"]],
+        fun_time = mean,
+        output = c("values", "seasonal_variability", "seasonality")
+      ))
+
+    } else if (out == "raw") {
+      swa_daily
+    }
   }
 
   res
@@ -691,11 +730,13 @@ get_SWA <- function(
 
 metric_SWAat0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   soils, ...
 ) {
+  out <- match.arg(out)
+
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
@@ -704,6 +745,7 @@ metric_SWAat0to100cm30bar <- function(
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     soils = soils,
     SWP_limit_MPa = -3,
     used_depth_range_cm = c(0, 100),
@@ -713,11 +755,13 @@ metric_SWAat0to100cm30bar <- function(
 
 metric_SWAat0to100cm39bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   soils, ...
 ) {
+  out <- match.arg(out)
+
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
@@ -726,6 +770,7 @@ metric_SWAat0to100cm39bar <- function(
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     soils = soils,
     SWP_limit_MPa = -3.9,
     used_depth_range_cm = c(0, 100),
@@ -740,6 +785,7 @@ metric_SWAat0to100cm39bar <- function(
 calc_DSI <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
+  out = c("ts_years", "raw"),
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
@@ -747,6 +793,7 @@ calc_DSI <- function(
   include_year = FALSE,
   ...
 ) {
+  out <- match.arg(out)
   res <- list()
 
   for (k1 in seq_along(id_scen_used)) {
@@ -773,35 +820,40 @@ calc_DSI <- function(
       sm_periods = list(op = `<`, limit = SWP_limit_MPa)
     )
 
-    tmp <- lapply(
-      X = tapply(
-        X = dry_daily[["values"]][[1]],
-        INDEX = dry_daily[["time"]][, "Year"],
-        FUN = function(x) {
-          tmp <- rle(x)
-          if (any(tmp[["values"]] == 1)) {
-            tmp[["lengths"]][tmp[["values"]]]
-          } else {
-            0
-          }
+    tmp_dsi <- tapply(
+      X = dry_daily[["values"]][[1]],
+      INDEX = dry_daily[["time"]][, "Year"],
+      FUN = function(x) {
+        tmp <- rle(x)
+        if (any(tmp[["values"]] == 1)) {
+          tmp[["lengths"]][tmp[["values"]]]
+        } else {
+          0
         }
-      ),
-      FUN = fun_periods
+      }
     )
 
-    tmp2 <- array(
-      unlist(tmp),
-      dim = c(length(tmp[[1]]), length(tmp)),
-      dimnames = list(names(tmp[[1]]), NULL)
-    )
+    if (out == "ts_years") {
 
-    res[[k1]] <- if (include_year) {
-      rbind(
-        Year = as.integer(names(tmp)),
-        tmp2
+      tmp <- lapply(tmp_dsi, FUN = fun_periods)
+
+      tmp2 <- array(
+        unlist(tmp),
+        dim = c(length(tmp[[1]]), length(tmp)),
+        dimnames = list(names(tmp[[1]]), NULL)
       )
-    } else {
-      tmp2
+
+      res[[k1]] <- if (include_year) {
+        rbind(
+          Year = as.integer(names(tmp)),
+          tmp2
+        )
+      } else {
+        tmp2
+      }
+
+    } else if (out == "raw") {
+      res[[k1]] <- tmp_dsi
     }
   }
 
@@ -810,11 +862,13 @@ calc_DSI <- function(
 
 metric_DSIat0to100cm15bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   soils, ...
 ) {
+  out <- match.arg(out)
+
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = "depth_cm"
   ))
 
@@ -823,6 +877,7 @@ metric_DSIat0to100cm15bar <- function(
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     soils = soils,
     SWP_limit_MPa = -1.5,
     used_depth_range_cm = c(0, 100),
@@ -832,11 +887,13 @@ metric_DSIat0to100cm15bar <- function(
 
 metric_DSIat0to100cm30bar <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   soils, ...
 ) {
+  out <- match.arg(out)
+
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = "depth_cm"
   ))
 
@@ -845,6 +902,7 @@ metric_DSIat0to100cm30bar <- function(
     name_sw2_run = name_sw2_run,
     id_scen_used = id_scen_used,
     list_years_scen_used = list_years_scen_used,
+    out = out,
     soils = soils,
     SWP_limit_MPa = -3.0,
     used_depth_range_cm = c(0, 100),
@@ -890,12 +948,15 @@ get_frost_doy <- function(
   if (include_year) res else res[, -1]
 }
 
+
 metric_FrostDaysAtNeg5C <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  out <- match.arg(out)
+
+  stopifnot(check_metric_arguments(out = "ts_years"))
 
   res <- list()
 
@@ -929,11 +990,12 @@ metric_FrostDaysAtNeg5C <- function(
 # precipitation by year
 metric_CorTempPPT <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   include_year = FALSE,
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  out <- match.arg(out)
+  stopifnot(check_metric_arguments(out = "ts_years"))
 
   res <- list()
 
@@ -1040,10 +1102,11 @@ get_SW2flux <- function(
 #' @noRd
 metric_ET <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  out <- match.arg(out)
+  stopifnot(check_metric_arguments(out = "ts_years"))
 
   get_SW2flux(
     path = path,
@@ -1061,10 +1124,11 @@ metric_ET <- function(
 #' @noRd
 metric_ETyr <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  out <- match.arg(out)
+  stopifnot(check_metric_arguments(out = "ts_years"))
 
   res <- list()
 
@@ -1099,10 +1163,11 @@ metric_ETyr <- function(
 #' @noRd
 metric_DR <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  out <- match.arg(out)
+  stopifnot(check_metric_arguments(out = "ts_years"))
 
   get_SW2flux(
     path = path,
@@ -1121,10 +1186,11 @@ metric_DR <- function(
 #' @noRd
 metric_Radiation <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  out <- match.arg(out)
+  stopifnot(check_metric_arguments(out = "ts_years"))
 
   get_SW2flux(
     path = path,
@@ -1142,11 +1208,12 @@ metric_Radiation <- function(
 metric_Climate_Annual <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   include_year = FALSE,
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  out <- match.arg(out)
+  stopifnot(check_metric_arguments(out = "ts_years"))
 
   res <- list()
 
@@ -1622,10 +1689,11 @@ metric_SMTRs <- function(
 metric_AI <- function(
   path, name_sw2_run,
   id_scen_used, list_years_scen_used,
-  out = "ts_years",
+  out = c("ts_years", "raw"),
   ...
 ) {
-  stopifnot(check_metric_arguments(out = match.arg(out)))
+  out <- match.arg(out)
+  stopifnot(check_metric_arguments(out = "ts_years"))
 
   res <- list()
 

@@ -22,7 +22,7 @@ test_that("Check parameters of outside-facing metrics", {
     )
 
     expect_true(
-      ff[["out"]] %in% c("across_years", "ts_years")
+      all(eval(ff[["out"]]) %in% c("across_years", "ts_years", "raw"))
     )
   }
 })
