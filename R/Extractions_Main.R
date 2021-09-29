@@ -754,3 +754,67 @@ format_metric_Nsim <- function(
 
   x
 }
+
+
+
+#' Interface to formatted output of a metric for one simulation
+#' @noRd
+formatted_metric_1sim <- function(
+  metric_foo_name,
+  foo_args = list(
+    path = NULL,
+    name_sw2_run = NULL,
+    id_scen_used = NULL,
+    list_years_scen_used = NULL,
+    soils = NULL,
+    out = NULL
+  ),
+  do_collect_inputs = FALSE
+) {
+  foo_metric <- getFromNamespace(metric_foo_name, "rSW2metrics")
+  stopifnot(is.function(foo_metric))
+
+  req_arg_names <- c(
+    "path", "name_sw2_run",
+    "id_scen_used", "list_years_scen_used",
+    "soils",
+    "out"
+  )
+  has_arg_names <- req_arg_names %in% names(foo_args)
+
+  if (any(!has_arg_names)) {
+    stop(
+      "`foo_args` is missing the named element(s): ",
+      paste0(shQuote(req_arg_names[!has_arg_names]), collapse = ", ")
+    )
+  }
+
+
+  res <- do.call(
+    what = foo_metric,
+    args = foo_args
+  )
+
+  is_out_ts <- foo_args[["out"]] == "ts_years"
+
+  if (is_out_ts) {
+    prjpars <- list(id_scen_used = foo_args[["id_scen_used"]])
+    if (is_out_ts) {
+      prjpars[["years_timeseries_by_scen"]] <- foo_args[["list_years_scen_used"]]
+    } else {
+      prjpars[["years_aggs_by_scen"]] <- foo_args[["list_years_scen_used"]]
+    }
+
+    format_metric_Nsim(
+      x = list(format_metric_1sim(res, id = 1)),
+      names = foo_args[["name_sw2_run"]],
+      prjpars = prjpars,
+      do_collect_inputs = do_collect_inputs,
+      fun_name = metric_foo_name,
+      is_out_ts = is_out_ts
+    )
+
+  } else if (foo_args[["out"]] == "raw") {
+    res
+  }
+}
