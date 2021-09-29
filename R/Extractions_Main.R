@@ -610,72 +610,19 @@ process_values_one_site <- function(
   soil_variables = NULL
 ) {
   # Add run-specific arguments
+  used_args <- c(
+    fun_args,
+    name_sw2_run = name_sw2_run
+  )
+
+
   if (is_soils_input) {
-    if (!missing(soils) && !is.null(soils) && !is.null(name_sw2_run_soils)) {
-      icrm <- 1:2
-
-      # Check that we got good soil variable names
-      names_soil_variables <- names(soil_variables)
-
-      stopifnot(
-        names_soil_variables %in% names(soils),
-        names_soil_variables %in% names(list_soil_variables())
-      )
-
-      # Locate site
-      idss <- lapply(
-        names_soil_variables,
-        function(k) match(name_sw2_run_soils, soils[[k]][, "site"])
-      )
-      names(idss) <- names_soil_variables
-
-      stopifnot(sapply(idss, is.finite), sapply(idss, length) == 1)
-
-      # Prepare soil variable values
-      used_soil <- lapply(
-        names_soil_variables,
-        function(k) unlist(soils[[k]][idss[[k]], -icrm])
-      )
-      names(used_soil) <- names_soil_variables
-
-      # Put together arguments for extraction
-      used_args <- c(
-        fun_args,
-        name_sw2_run = name_sw2_run,
-        soils = list(used_soil)
-      )
-
-    } else {
-      if (is.null(soil_variables)) {
-        soil_variables <- list_soil_variables()
-      }
-      nsv <- names(soil_variables)
-
-      tmp_soils <- get_soillayers_variable(
-        path = fun_args[["path"]],
-        name_sw2_run = name_sw2_run,
-        id_scen = 1,
-        sw2_soil_var = nsv
-      )
-
-      used_args <- c(
-        fun_args,
-        name_sw2_run = name_sw2_run,
-        soils = list(list(
-          depth_cm = if ("depth_cm" %in% nsv) tmp_soils["depth_cm", ],
-          sand_frac = if ("sand_frac" %in% nsv) tmp_soils["sand_frac", ],
-          clay_frac = if ("clay_frac" %in% nsv) tmp_soils["clay_frac", ],
-          gravel_content = if ("gravel_content" %in% nsv) {
-            tmp_soils["gravel_content", ]
-          }
-        ))
-      )
-    }
-
-  } else {
-    used_args <- c(
-      fun_args,
-      name_sw2_run = name_sw2_run
+    used_args[["soils"]] <- prepare_soils_for_site(
+      path = fun_args[["path"]],
+      name_sw2_run = name_sw2_run,
+      name_sw2_run_soils = name_sw2_run_soils,
+      soils = soils,
+      soil_variables = soil_variables
     )
   }
 
