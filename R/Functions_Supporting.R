@@ -62,7 +62,6 @@ prepare_soils_for_site <- function(
 
   if (!missing(soils) && !is.null(soils) && !is.null(name_sw2_run_soils)) {
     #--- Soils are pre-extracted: subset `soils`
-    icrm <- 1:2
 
     # Check that we got good soil variable names
     names_soil_variables <- names(soil_variables)

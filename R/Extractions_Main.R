@@ -794,7 +794,9 @@ formatted_metric_1sim <- function(
   if (is_out_ts) {
     prjpars <- list(id_scen_used = foo_args[["id_scen_used"]])
     if (is_out_ts) {
-      prjpars[["years_timeseries_by_scen"]] <- foo_args[["list_years_scen_used"]]
+      prjpars[["years_timeseries_by_scen"]] <-
+        foo_args[["list_years_scen_used"]]
+
     } else {
       prjpars[["years_aggs_by_scen"]] <- foo_args[["list_years_scen_used"]]
     }
