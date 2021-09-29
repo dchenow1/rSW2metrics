@@ -149,7 +149,7 @@ check_extraction_arguments <- function(x) {
 
   stopifnot(!is.na(x[["tag_filename"]]), nzchar(x[["tag_filename"]]))
 
-  stopifnot(is.function(match.fun(x[["fun_name"]])))
+  stopifnot(is.function(get0(x[["fun_name"]])))
 
   if (!file.exists(x[["filename_params"]])) {
     stop(
@@ -245,7 +245,7 @@ check_project_parameters <- function(x, args) {
   if (args[["add_aggs_across_yrs"]] && args[["is_out_ts"]]) {
     stopifnot(
       exists("fun_aggs_across_yrs", where = x),
-      is.function(match.fun(x[["fun_aggs_across_yrs"]]))
+      is.function(get0(x[["fun_aggs_across_yrs"]]))
     )
   }
 
@@ -771,8 +771,6 @@ formatted_metric_1sim <- function(
   ),
   do_collect_inputs = FALSE
 ) {
-  foo_metric <- getFromNamespace(metric_foo_name, "rSW2metrics")
-  stopifnot(is.function(foo_metric))
 
   req_arg_names <- c(
     "path", "name_sw2_run",
@@ -789,11 +787,8 @@ formatted_metric_1sim <- function(
     )
   }
 
+  res <- do.call(what = metric_foo_name, args = foo_args)
 
-  res <- do.call(
-    what = foo_metric,
-    args = foo_args
-  )
 
   is_out_ts <- foo_args[["out"]] == "ts_years"
 
