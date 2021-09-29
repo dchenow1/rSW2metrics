@@ -789,8 +789,7 @@ formatted_metric_1sim <- function(
 
   res <- do.call(what = metric_foo_name, args = foo_args)
 
-
-  is_out_ts <- foo_args[["out"]] == "ts_years"
+  is_out_ts <- identical(foo_args[["out"]], "ts_years")
 
   if (is_out_ts) {
     prjpars <- list(id_scen_used = foo_args[["id_scen_used"]])

@@ -13,8 +13,8 @@ has_fun_soils_as_arg <- function(fun) {
 }
 
 has_fun_ts_as_output <- function(fun) {
-  tmp <- eval(formals(fun)[["out"]])
-  isTRUE(tmp == "ts_years" || tmp == c("ts_years", "raw"))
+  tmp <- sort(eval(formals(fun)[["out"]]))
+  isTRUE(identical(tmp, "ts_years") || identical(tmp, c("raw", "ts_years")))
 }
 
 is_fun_collecting_inputs <- function(fun) {
