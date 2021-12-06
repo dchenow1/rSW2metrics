@@ -273,6 +273,8 @@ get_VWC_Seasonal <- function(
 
   widths_cm <- calc_soillayer_weights(soils[["depth_cm"]], used_depth_range_cm)
 
+  warning("`get_VWC_Seasonal()` returns matric-VWC!")
+
   calc_univariate_from_sw2(
     path, name_sw2_run,
     id_scen_used = id_scen_used,
@@ -352,6 +354,8 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
     req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
   ))
 
+  warning("`metric_SWP_SoilLayers_MeanMonthly()` uses matric-VWC!")
+
   vwc <- calc_multivariate_from_sw2(
     path, name_sw2_run,
     id_scen_used = id_scen_used,
@@ -417,6 +421,9 @@ metric_SWP_SoilLayers_MeanMonthly <- function(
 #--- SWA ------
 # Soil water availability (SWA)- whole/part profile--Seasonal--Mean	total cm
 # Mean daily SWA (moisture above -3.9MPa)
+#
+# see `calc_SWA_mm()` for explanation of calculation
+#
 get_SWA_Seasonal <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
   group_by_month, first_month_of_year,
@@ -428,11 +435,13 @@ get_SWA_Seasonal <- function(
   widths_cm <- calc_soillayer_weights(soils[["depth_cm"]], used_depth_range_cm)
 
   id_slyrs <- which(!is.na(widths_cm))
-  base_SWC_cm <- widths_cm[id_slyrs] * rSOILWAT2::SWPtoVWC(
+  # Calculate SWC threshold (corrected for coarse fragments)
+  # SWC <-> VWC exists only for the matric component
+  base_SWC_cm <- rSOILWAT2::SWPtoVWC(
     swp = crit_SWP_MPa,
     sand = soils[["sand_frac"]][id_slyrs],
     clay = soils[["clay_frac"]][id_slyrs]
-  )
+  ) * widths_cm[id_slyrs] * (1 - soils[["gravel_content"]][id_slyrs])
 
   calc_univariate_from_sw2(
     path, name_sw2_run,
@@ -462,7 +471,7 @@ metric_SWA_Seasonal_wholeprofile <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA_Seasonal(
@@ -486,7 +495,7 @@ metric_SWA_Seasonal_top50cm <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA_Seasonal(
@@ -680,11 +689,13 @@ get_NonDrySWA_Seasonal <- function(
   widths_cm <- calc_soillayer_weights(soils[["depth_cm"]], used_depth_range_cm)
 
   id_slyrs <- which(!is.na(widths_cm))
-  base_SWC_cm <- widths_cm[id_slyrs] * rSOILWAT2::SWPtoVWC(
+  # Calculate SWC threshold (corrected for coarse fragments)
+  # SWC <-> VWC exists only for the matric component
+  base_SWC_cm <- rSOILWAT2::SWPtoVWC(
     swp = crit_SWP_MPa,
     sand = soils[["sand_frac"]][id_slyrs],
     clay = soils[["clay_frac"]][id_slyrs]
-  )
+  ) * widths_cm[id_slyrs] * (1 - soils[["gravel_content"]][id_slyrs])
 
   calc_univariate_from_sw2(
     path, name_sw2_run,

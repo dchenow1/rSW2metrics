@@ -49,6 +49,76 @@ shorten_run_names <- function(run_names, element_sep = "_", N_discard = 2) {
 }
 
 
+
+prepare_soils_for_site <- function(
+  path,
+  name_sw2_run,
+  name_sw2_run_soils = NULL,
+  soils = NULL,
+  soil_variables = NULL,
+  var_soilsite = "site"
+) {
+  used_soil <- NULL
+
+  if (!missing(soils) && !is.null(soils) && !is.null(name_sw2_run_soils)) {
+    #--- Soils are pre-extracted: subset `soils`
+
+    # Check that we got good soil variable names
+    names_soil_variables <- names(soil_variables)
+
+    stopifnot(
+      names_soil_variables %in% names(soils),
+      names_soil_variables %in% names(list_soil_variables())
+    )
+
+    # Locate site
+    idss <- lapply(
+      names_soil_variables,
+      function(k) match(name_sw2_run_soils, soils[[k]][, var_soilsite])
+    )
+    names(idss) <- names_soil_variables
+
+    stopifnot(sapply(idss, is.finite), sapply(idss, length) == 1)
+
+    # Prepare soil variable values
+    used_soil <- lapply(
+      names_soil_variables,
+      function(k) {
+        ics <- grepl("_L[[:digit:]]+$", colnames(soils[[k]]))
+        unlist(soils[[k]][idss[[k]], ics])
+      }
+    )
+    names(used_soil) <- names_soil_variables
+
+  } else {
+    #--- Soils are not pre-extracted: read values from files
+    if (is.null(soil_variables)) {
+      soil_variables <- list_soil_variables()
+    }
+    nsv <- names(soil_variables)
+
+    tmp_soils <- get_soillayers_variable(
+      path = path,
+      name_sw2_run = name_sw2_run,
+      id_scen = 1,
+      sw2_soil_var = nsv
+    )
+
+    used_soil <- list(
+      depth_cm = if ("depth_cm" %in% nsv) tmp_soils["depth_cm", ],
+      sand_frac = if ("sand_frac" %in% nsv) tmp_soils["sand_frac", ],
+      clay_frac = if ("clay_frac" %in% nsv) tmp_soils["clay_frac", ],
+      gravel_content = if ("gravel_content" %in% nsv) {
+        tmp_soils["gravel_content", ]
+      }
+    )
+  }
+
+  used_soil
+}
+
+
+
 #--- Obtain input values -------------------------------------------------------
 
 #' Determine widths (as weights) of soil layers within a zone
@@ -748,6 +818,8 @@ get_swp_weighted <- function(
   used_depth_range_cm = NULL,
   ...
 ) {
+  warning("`get_swp_weighted()` uses matric-VWC!")
+
   vwc <- extract_from_sw2(
     path = path,
     name_sw2_run = name_sw2_run,

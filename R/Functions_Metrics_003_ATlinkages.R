@@ -50,6 +50,7 @@ metric_Tmean_JJA <- function(
 }
 
 
+# soils must have "depth_cm", "sand_frac", "clay_frac", and "gravel_content"
 get_SWA_JJA <- function(
   path, name_sw2_run, id_scen_used,
   out_label,
@@ -69,17 +70,17 @@ get_SWA_JJA <- function(
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
       output_sets = list(
-        vwc_daily = list(
+        swc_daily = list(
           sw2_tp = "Day",
-          sw2_outs = "VWCMATRIC",
-          sw2_vars = c(vwc = "Lyr"),
+          sw2_outs = "SWCBULK",
+          sw2_vars = c(swc = "Lyr"),
           varnames_are_fixed = FALSE
         )
       )
     )
 
     swa_daily <- calc_SWA_mm(
-      sim_vwc_daily = sim_data[["vwc_daily"]],
+      sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
       used_depth_range_cm = used_depth_range_cm
@@ -130,7 +131,7 @@ metric_SWAat0to020cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(0, 20)
@@ -162,7 +163,7 @@ metric_SWAat0to100cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA_JJA(
@@ -185,7 +186,7 @@ metric_SWAat20to100cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(20, 100)
@@ -217,7 +218,7 @@ metric_SWAat20to040cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(20, 40)
@@ -250,7 +251,7 @@ metric_SWAat40to060cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(40, 60)
@@ -283,7 +284,7 @@ metric_SWAat60to080cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(60, 80)
@@ -317,7 +318,7 @@ metric_SWAat80to100cm39bar_JJA <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(80, 100)
@@ -437,11 +438,13 @@ metric_Tmean_daily <- function(
   res
 }
 
+# soils must have "depth_cm", "sand_frac", "clay_frac", and "gravel_content"
 get_SWA_daily <- function(
   path, name_sw2_run, id_scen_used,
   list_years_scen_used,
   out_label,
   include_year = FALSE,
+  out = "ts_years",
   soils,
   used_depth_range_cm = NULL,
   SWP_limit_MPa = -Inf,
@@ -456,17 +459,17 @@ get_SWA_daily <- function(
       id_scen = id_scen_used[k1],
       years = list_years_scen_used[[k1]],
       output_sets = list(
-        vwc_daily = list(
+        swc_daily = list(
           sw2_tp = "Day",
-          sw2_outs = "VWCMATRIC",
-          sw2_vars = c(vwc = "Lyr"),
+          sw2_outs = "SWCBULK",
+          sw2_vars = c(swc = "Lyr"),
           varnames_are_fixed = FALSE
         )
       )
     )
 
     swa_daily <- calc_SWA_mm(
-      sim_vwc_daily = sim_data[["vwc_daily"]],
+      sim_swc_daily = sim_data[["swc_daily"]],
       soils = soils,
       SWP_limit_MPa = SWP_limit_MPa,
       used_depth_range_cm = used_depth_range_cm
@@ -493,7 +496,7 @@ metric_SWAat0to020cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(0, 20)
@@ -525,7 +528,7 @@ metric_SWAat0to100cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   get_SWA_daily(
@@ -549,9 +552,8 @@ metric_SWAat20to100cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
-
 
   used_depth_range_cm <- c(20, 100)
 
@@ -582,7 +584,7 @@ metric_SWAat20to040cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(20, 40)
@@ -615,7 +617,7 @@ metric_SWAat40to060cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(40, 60)
@@ -648,7 +650,7 @@ metric_SWAat60to080cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(60, 80)
@@ -681,7 +683,7 @@ metric_SWAat80to100cm39bar_daily <- function(
 ) {
   stopifnot(check_metric_arguments(
     out = match.arg(out),
-    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac")
+    req_soil_vars = c("depth_cm", "sand_frac", "clay_frac", "gravel_content")
   ))
 
   used_depth_range_cm <- c(80, 100)

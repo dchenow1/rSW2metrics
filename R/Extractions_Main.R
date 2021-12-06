@@ -149,7 +149,7 @@ check_extraction_arguments <- function(x) {
 
   stopifnot(!is.na(x[["tag_filename"]]), nzchar(x[["tag_filename"]]))
 
-  stopifnot(is.function(match.fun(x[["fun_name"]])))
+  stopifnot(is.function(get0(x[["fun_name"]])))
 
   if (!file.exists(x[["filename_params"]])) {
     stop(
@@ -245,7 +245,7 @@ check_project_parameters <- function(x, args) {
   if (args[["add_aggs_across_yrs"]] && args[["is_out_ts"]]) {
     stopifnot(
       exists("fun_aggs_across_yrs", where = x),
-      is.function(match.fun(x[["fun_aggs_across_yrs"]]))
+      is.function(get0(x[["fun_aggs_across_yrs"]]))
     )
   }
 
@@ -610,72 +610,19 @@ process_values_one_site <- function(
   soil_variables = NULL
 ) {
   # Add run-specific arguments
+  used_args <- c(
+    fun_args,
+    name_sw2_run = name_sw2_run
+  )
+
+
   if (is_soils_input) {
-    if (!missing(soils) && !is.null(soils) && !is.null(name_sw2_run_soils)) {
-      icrm <- 1:2
-
-      # Check that we got good soil variable names
-      names_soil_variables <- names(soil_variables)
-
-      stopifnot(
-        names_soil_variables %in% names(soils),
-        names_soil_variables %in% names(list_soil_variables())
-      )
-
-      # Locate site
-      idss <- lapply(
-        names_soil_variables,
-        function(k) match(name_sw2_run_soils, soils[[k]][, "site"])
-      )
-      names(idss) <- names_soil_variables
-
-      stopifnot(sapply(idss, is.finite), sapply(idss, length) == 1)
-
-      # Prepare soil variable values
-      used_soil <- lapply(
-        names_soil_variables,
-        function(k) unlist(soils[[k]][idss[[k]], -icrm])
-      )
-      names(used_soil) <- names_soil_variables
-
-      # Put together arguments for extraction
-      used_args <- c(
-        fun_args,
-        name_sw2_run = name_sw2_run,
-        soils = list(used_soil)
-      )
-
-    } else {
-      if (is.null(soil_variables)) {
-        soil_variables <- list_soil_variables()
-      }
-      nsv <- names(soil_variables)
-
-      tmp_soils <- get_soillayers_variable(
-        path = fun_args[["path"]],
-        name_sw2_run = name_sw2_run,
-        id_scen = 1,
-        sw2_soil_var = nsv
-      )
-
-      used_args <- c(
-        fun_args,
-        name_sw2_run = name_sw2_run,
-        soils = list(list(
-          depth_cm = if ("depth_cm" %in% nsv) tmp_soils["depth_cm", ],
-          sand_frac = if ("sand_frac" %in% nsv) tmp_soils["sand_frac", ],
-          clay_frac = if ("clay_frac" %in% nsv) tmp_soils["clay_frac", ],
-          gravel_content = if ("gravel_content" %in% nsv) {
-            tmp_soils["gravel_content", ]
-          }
-        ))
-      )
-    }
-
-  } else {
-    used_args <- c(
-      fun_args,
-      name_sw2_run = name_sw2_run
+    used_args[["soils"]] <- prepare_soils_for_site(
+      path = fun_args[["path"]],
+      name_sw2_run = name_sw2_run,
+      name_sw2_run_soils = name_sw2_run_soils,
+      soils = soils,
+      soil_variables = soil_variables
     )
   }
 
@@ -806,4 +753,64 @@ format_metric_Nsim <- function(
   rownames(x) <- NULL
 
   x
+}
+
+
+
+#' Interface to formatted output of a metric for one simulation
+#' @noRd
+formatted_metric_1sim <- function(
+  metric_foo_name,
+  foo_args = list(
+    path = NULL,
+    name_sw2_run = NULL,
+    id_scen_used = NULL,
+    list_years_scen_used = NULL,
+    soils = NULL,
+    out = NULL
+  ),
+  do_collect_inputs = FALSE
+) {
+
+  req_arg_names <- c(
+    "path", "name_sw2_run",
+    "id_scen_used", "list_years_scen_used",
+    "soils",
+    "out"
+  )
+  has_arg_names <- req_arg_names %in% names(foo_args)
+
+  if (any(!has_arg_names)) {
+    stop(
+      "`foo_args` is missing the named element(s): ",
+      paste0(shQuote(req_arg_names[!has_arg_names]), collapse = ", ")
+    )
+  }
+
+  res <- do.call(what = metric_foo_name, args = foo_args)
+
+  is_out_ts <- identical(foo_args[["out"]], "ts_years")
+
+  if (is_out_ts) {
+    prjpars <- list(id_scen_used = foo_args[["id_scen_used"]])
+    if (is_out_ts) {
+      prjpars[["years_timeseries_by_scen"]] <-
+        foo_args[["list_years_scen_used"]]
+
+    } else {
+      prjpars[["years_aggs_by_scen"]] <- foo_args[["list_years_scen_used"]]
+    }
+
+    format_metric_Nsim(
+      x = list(format_metric_1sim(res, id = 1)),
+      names = foo_args[["name_sw2_run"]],
+      prjpars = prjpars,
+      do_collect_inputs = do_collect_inputs,
+      fun_name = metric_foo_name,
+      is_out_ts = is_out_ts
+    )
+
+  } else if (foo_args[["out"]] == "raw") {
+    res
+  }
 }

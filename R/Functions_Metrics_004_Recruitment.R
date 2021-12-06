@@ -7,6 +7,7 @@ calc_RecruitmentIndex_v2 <- function(...) {
 calc_RecruitmentIndex_v3 <- function(
   sim_data,
   soils,
+  out = c("ts_years", "raw"),
   hemisphere_NS = c("N", "S"),
   recruitment_depth_range_cm = c(5, 30),
   Temp_limit_C = 5,
@@ -25,6 +26,8 @@ calc_RecruitmentIndex_v3 <- function(
   ...
 ) {
   stopifnot(requireNamespace("zoo", quietly = TRUE))
+
+  out <- match.arg(out)
 
   hemisphere_NS <- match.arg(hemisphere_NS)
   stopifnot(hemisphere_NS == "N") #TODO: implement for southern hemisphere
@@ -281,7 +284,18 @@ calc_RecruitmentIndex_v3 <- function(
 
   res[res == 0] <- NA
 
-  res
+  if (out == "ts_years") {
+    res
+  } else if (out == "raw") {
+    list(
+      res = res,
+      periods = periods,
+      wdd_recruit = wdd_recruit,
+      wdd_start = wdd_start,
+      ddd_stop = ddd_stop,
+      tdd_nostop = tdd_nostop
+    )
+  }
 }
 
 
@@ -292,11 +306,13 @@ calc_RecruitmentIndex_v3 <- function(
 # or after 3-day periods with TDD == 0
 metric_RecruitmentIndex_v4 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
-  soils, ...
+  out = c("ts_years", "raw"),
+  soils,
+  ...
 ) {
+  out <- match.arg(out)
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = "depth_cm"
   ))
 
@@ -358,6 +374,7 @@ metric_RecruitmentIndex_v4 <- function(
     res[[k1]] <- t(calc_RecruitmentIndex_v3(
       sim_data = sim_data,
       soils = soils,
+      out = out,
       hemisphere_NS = "N",
       recruitment_depth_range_cm = recruitment_depth_range_cm,
       Temp_limit_C = 5,
@@ -386,11 +403,13 @@ metric_RecruitmentIndex_v4 <- function(
 # or after 3-day periods with TDD == 0
 metric_RecruitmentIndex_v5 <- function(
   path, name_sw2_run, id_scen_used, list_years_scen_used,
-  out = "ts_years",
-  soils, ...
+  out = c("ts_years", "raw"),
+  soils,
+  ...
 ) {
+  out <- match.arg(out)
   stopifnot(check_metric_arguments(
-    out = match.arg(out),
+    out = "ts_years",
     req_soil_vars = "depth_cm"
   ))
 
@@ -452,6 +471,7 @@ metric_RecruitmentIndex_v5 <- function(
     res[[k1]] <- t(calc_RecruitmentIndex_v3(
       sim_data = sim_data,
       soils = soils,
+      out = out,
       hemisphere_NS = "N",
       recruitment_depth_range_cm = recruitment_depth_range_cm,
       Temp_limit_C = 5,

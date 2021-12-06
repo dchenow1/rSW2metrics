@@ -13,7 +13,8 @@ has_fun_soils_as_arg <- function(fun) {
 }
 
 has_fun_ts_as_output <- function(fun) {
-  isTRUE(formals(fun)[["out"]] == "ts_years")
+  tmp <- sort(eval(formals(fun)[["out"]]))
+  isTRUE(identical(tmp, "ts_years") || identical(tmp, c("raw", "ts_years")))
 }
 
 is_fun_collecting_inputs <- function(fun) {
@@ -30,15 +31,20 @@ check_metric_arguments <- function(out, req_soil_vars) {
     envir = parent.frame(2L)
   ))
 
-
-  if (missing(out) || is.null(out)) {
-    stop(
-      "'out' is a required argument to function ",
-      shQuote(as.character(fun_args[[1]]))
-    )
+  # Evaluate arguments, but not function name (first element)
+  fun_name <- if (is.function(fun_args[[1]])) {
+    "anonymous"
+  } else {
+    as.character(fun_args[[1]])
   }
 
-  if ("out" %in% names(fun_args) && out != fun_args[["out"]]) {
+  fun_args <- lapply(fun_args[-1], eval)
+
+  if (missing(out) || is.null(out)) {
+    stop("'out' is a required argument to function ", shQuote(fun_name))
+  }
+
+  if ("out" %in% names(fun_args) && !(fun_args[["out"]] %in% c(out, "raw"))) {
     stop(
       "Inconsistency in 'out': ",
       shQuote(out), " versus ", shQuote(fun_args[["out"]])
@@ -55,7 +61,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
       stop(
         "'list_years_scen_used' ",
         "should be a list with integer vectors ",
-        "for function ", shQuote(as.character(fun_args[[1]]))
+        "for function ", shQuote(fun_name)
       )
     }
 
@@ -77,9 +83,10 @@ check_metric_arguments <- function(out, req_soil_vars) {
       stop(
         "'list_years_scen_used' ",
         "should be a list of lists with integer vectors ",
-        "for function ", shQuote(as.character(fun_args[[1]]))
+        "for function ", shQuote(fun_name)
       )
     }
+  } else if (out %in% "raw") {
   }
 
   if (!missing(req_soil_vars)) {
@@ -109,8 +116,7 @@ check_metric_arguments <- function(out, req_soil_vars) {
 
     } else {
       stop(
-        "Soil variables are required for function ",
-        shQuote(as.character(fun_args[[1]])),
+        "Soil variables are required for function ", shQuote(fun_name),
         " but there is no 'soils' object."
       )
     }
